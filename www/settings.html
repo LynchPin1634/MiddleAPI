@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>MiddleAPI - 设置</title>
+    <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --accent: #f72585;
+        }
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .settings-card {
+            border-left: 4px solid var(--primary);
+        }
+        .mode-selector {
+            margin-bottom: 2rem;
+        }
+        .mode-card {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .mode-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .mode-card.is-active {
+            border: 2px solid var(--primary);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.is-active {
+            display: block;
+        }
+        .api-key-input {
+            font-family: monospace;
+        }
+        .api-key-help {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .is-danger-help {
+            color: #ff3860;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .slider {
+            flex-grow: 1;
+        }
+        .slider-value {
+            min-width: 3rem;
+            text-align: center;
+        }
+        .audio-upload {
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="?html=index.html">
+                <i class="fas fa-code mr-2"></i>
+                <span class="has-text-weight-bold">MiddleAPI</span>
+            </a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div id="navbarBasic" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" href="?html=index.html">
+                    <i class="fas fa-home mr-2"></i>主页
+                </a>
+                <a class="navbar-item is-active" href="?html=settings.html">
+                    <i class="fas fa-cog mr-2"></i>设置
+                </a>
+                <a class="navbar-item" href="?html=audio_list.html">
+                    <i class="fas fa-music mr-2"></i>音频列表
+                </a>
+                <a class="navbar-item" href="?html=cleanup.html">
+                    <i class="fas fa-trash mr-2"></i>音频清理
+                </a>
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" onclick="alert('请加QQ群：146052965 来反馈您的问题')">
+                            <i class="fas fa-bug mr-2"></i>报告问题
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <section class="section">
+        <div class="container">
+            <div class="mode-selector">
+                <h2 class="title is-4 mb-4">选择驱动模式</h2>
+                <div class="columns">
+                    <div class="column is-6">
+                        <div class="card mode-card is-active" id="tts-mode">
+                            <div class="card-content">
+                                <div class="media">
+                                    <div class="media-left">
+                                        <span class="icon is-large has-text-info">
+                                            <i class="fas fa-3x fa-robot"></i>
+                                        </span>
+                                    </div>
+                                    <div class="media-content">
+                                        <p class="title is-4">普通TTS驱动</p>
+                                        <p class="subtitle is-6">标准文本转语音模式</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="column is-6">
+                        <div class="card mode-card" id="minecraft-mode">
+                            <div class="card-content">
+                                <div class="media">
+                                    <div class="media-left">
+                                        <span class="icon is-large has-text-success">
+                                            <i class="fas fa-3x fa-cube"></i>
+                                        </span>
+                                    </div>
+                                    <div class="media-content">
+                                        <p class="title is-4">MindCraft联动</p>
+                                        <p class="subtitle is-6">与Minecraft游戏联动的特殊模式</p>
+                                    </div>
+                                </div>
+                                <!-- MindCraft API密钥输入 -->
+                                <div class="field mt-4" id="minecraft-api-field" style="display: none;">
+                                    <label class="label">MindCraft API密钥</label>
+                                    <div class="control has-icons-left">
+                                        <input class="input api-key-input" type="password" name="minecraft_api_key"
+                                               placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                                               pattern="sk-[a-zA-Z0-9]{48}"
+                                               title="请输入有效的API密钥格式 (sk-后面跟随48位字母数字)">
+                                        <span class="icon is-small is-left">
+                                            <i class="fas fa-key"></i>
+                                        </span>
+                                    </div>
+                                    <p class="help api-key-help">格式: sk-后面跟随48位字母数字组合</p>
+                                    <p class="is-danger-help" id="api-key-error" style="display: none;"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tabs is-boxed">
+                <ul>
+                    <li class="is-active" data-tab="global"><a>全局设置</a></li>
+                    <li data-tab="reference"><a>参考音频</a></li>
+                    <li data-tab="inference"><a>推理设置</a></li>
+                    <li data-tab="cutting"><a>切割设置</a></li>
+                    <li data-tab="gpt"><a>GPT参数</a></li>
+                </ul>
+            </div>
+
+            <div id="global" class="tab-content is-active">
+                <div class="box settings-card">
+                    <h3 class="title is-5"><i class="fas fa-globe mr-2"></i>全局设置</h3>
+
+                    <div class="field">
+                        <label class="label">使用新API</label>
+                        <div class="control">
+                            <label class="radio">
+                                <input type="radio" name="use_new_api" value="true" checked>
+                                是
+                            </label>
+                            <label class="radio">
+                                <input type="radio" name="use_new_api" value="false">
+                                否
+                            </label>
+                        </div>
+                        <p class="help">启用新版API接口，提供更多功能</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reference" class="tab-content">
+                <div class="box settings-card">
+                    <h3 class="title is-5"><i class="fas fa-music mr-2"></i>参考音频设置</h3>
+                    <div class="notification is-info">
+                        <p>提示：建议使用5-10秒的音频以获得最佳效果。</p>
+                    </div>
+                    <div class="audio-upload">
+                        <div class="field">
+                            <label class="label">本地音频文件</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="file" id="local-audio" name="local-audio" accept="audio/*">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-file-audio"></i>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="label">音频URL</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="text" id="audio-url" name="audio-url" placeholder="输入音频URL">
+                                <span class="icon is-small is-left">
+                                    <i class="fas fa-link"></i>
+                                </span>
+                            </div>
+                            <p class="help is-danger" id="url-error" style="display: none;">无法解析URL，请检查链接的合法性和网络连接。</p>
+                        </div>
+
+                        <div class="field is-grouped">
+                            <div class="control">
+                                <button class="button is-primary" id="upload-local-audio">
+                                    <i class="fas fa-upload mr-2"></i>上传本地音频
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">参考音频文本</label>
+                        <div class="control">
+                            <textarea class="textarea" name="reference_audio_text" placeholder="输入参考音频对应的文本"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">参考音频语言</label>
+                        <div class="control has-icons-left">
+                            <div class="select is-fullwidth">
+                                <select name="reference_audio_language">
+                                    <option value="Chinese">中文</option>
+                                    <option value="English">英文</option>
+                                    <option value="Japanese">日文</option>
+                                </select>
+                            </div>
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-language"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">无参考模式</label>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" name="no_reference_mode">
+                                启用无参考模式（不推荐）
+                            </label>
+                        </div>
+                        <p class="help">启用后将不使用参考音频</p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">输入参考</label>
+                        <div class="control">
+                            <input class="input" type="text" name="inp_refs" placeholder="输入参考参数（默认留空）">
+                        </div>
+                    </div>
+
+
+                </div>
+            </div>
+
+            <div id="inference" class="tab-content">
+                <div class="box settings-card">
+                    <h3 class="title is-5"><i class="fas fa-brain mr-2"></i>推理设置</h3>
+
+                    <div class="field">
+                        <label class="label">推理文本语言</label>
+                        <div class="control has-icons-left">
+                            <div class="select is-fullwidth">
+                                <select name="inference_text_language">
+                                    <option value="中文">中文</option>
+                                    <option value="英文">英文</option>
+                                    <option value="日文">日文</option>
+                                    <option value="中英混合" selected>中英混合</option>
+                                    <option value="日英混合">日英混合</option>
+                                    <option value="多语种混合">多语种混合</option>
+                                </select>
+                            </div>
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-language"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cutting" class="tab-content">
+                <div class="box settings-card">
+                    <h3 class="title is-5"><i class="fas fa-cut mr-2"></i>音频切割设置</h3>
+
+                    <div class="field">
+                        <label class="label">切割模式</label>
+                        <div class="control has-icons-left">
+                            <div class="select is-fullwidth">
+                                <select name="cutting_mode">
+                                    <option value="No slice">不切</option>
+                                    <option value="Slice once every 4 sentences" selected>凑四句一切</option>
+                                    <option value="Cut per 50 characters">凑50字一切</option>
+                                    <option value="Slice by Chinese punct">按中文句号。切</option>
+                                    <option value="Slice by English punct">按英文句号.切</option>
+                                    <option value="Slice by every punct">按标点符号切</option>
+                                </select>
+                            </div>
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-cut"></i>
+                            </span>
+                        </div>
+                        <p class="help">选择音频文本的切割方式</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="gpt" class="tab-content">
+                <div class="box settings-card">
+                    <h3 class="title is-5"><i class="fas fa-brain mr-2"></i>GPT参数设置</h3>
+
+                    <div class="field">
+                        <label class="label">Top K (0-100)</label>
+                        <div class="slider-container">
+                            <input class="slider" type="range" name="top_k" min="1" max="100" step="1" value="15">
+                            <span class="slider-value">15</span>
+                        </div>
+                        <p class="help">控制生成多样性的参数 (默认: 15)</p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Top P (0-1)</label>
+                        <div class="slider-container">
+                            <input class="slider" type="range" name="top_p" min="0" max="1" step="0.05" value="1">
+                            <span class="slider-value">1</span>
+                        </div>
+                        <p class="help">控制生成多样性的参数 (默认: 1)</p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">Temperature (0-1)</label>
+                        <div class="slider-container">
+                            <input class="slider" type="range" name="temperature" min="0" max="1" step="0.05" value="1">
+                            <span class="slider-value">1</span>
+                        </div>
+                        <p class="help">控制生成随机性的参数 (默认: 1)</p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">语速 (0.6-1.65)</label>
+                        <div class="slider-container">
+                            <input class="slider" type="range" name="speed" min="0.6" max="1.65" step="0.05" value="1">
+                            <span class="slider-value">1</span>
+                        </div>
+                        <p class="help">控制语音速度 (默认: 1)</p>
+                    </div>
+
+                    <div class="field">
+                        <label class="label">冻结模式</label>
+                        <div class="control">
+                            <label class="checkbox">
+                                <input type="checkbox" name="if_freeze">
+                                启用冻结模式
+                            </label>
+                        </div>
+                        <p class="help">启用后将冻结部分GPT参数</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field is-grouped mt-5">
+                <div class="control">
+                    <button class="button is-primary" id="save-settings">
+                        <i class="fas fa-save mr-2"></i>保存设置
+                    </button>
+                </div>
+                <div class="control">
+                    <button class="button is-light" id="reset-settings">
+                        <i class="fas fa-undo mr-2"></i>恢复默认
+                    </button>
+                </div>
+            </div>
+
+            <article class="message is-warning mt-5">
+                <div class="message-header">
+                    <p><i class="fas fa-exclamation-triangle mr-2"></i>警告</p>
+                </div>
+                <div class="message-body">
+                    MiddleAPI仍在<strong>早期开发阶段</strong>，如遇BUG请积极提交！
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>MiddleAPI</strong> by <a href="#" id="lynchpin-link">LynchPin</a>.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            if ($navbarBurgers.length > 0) {
+                $navbarBurgers.forEach(el => {
+                    el.addEventListener('click', () => {
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+            document.getElementById('lynchpin-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.navbar-item').forEach(item => {
+                    item.classList.remove('is-active');
+                });
+                window.location.href = '?html=lynchpin.html';
+            });
+            const currentPage = window.location.search.split('=')[1] || 'index.html';
+            document.querySelectorAll('.navbar-item').forEach(item => {
+                const href = item.getAttribute('href');
+                if (href && href.includes(currentPage)) {
+                    item.classList.add('is-active');
+                } else {
+                    item.classList.remove('is-active');
+                }
+            });
+
+            const ttsMode = document.getElementById('tts-mode');
+            const minecraftMode = document.getElementById('minecraft-mode');
+            const minecraftApiField = document.getElementById('minecraft-api-field');
+
+            ttsMode.addEventListener('click', () => {
+                ttsMode.classList.add('is-active');
+                minecraftMode.classList.remove('is-active');
+                minecraftApiField.style.display = 'none';
+            });
+
+            minecraftMode.addEventListener('click', () => {
+                minecraftMode.classList.add('is-active');
+                ttsMode.classList.remove('is-active');
+                minecraftApiField.style.display = 'block';
+            });
+
+            const apiKeyInput = document.querySelector('input[name="minecraft_api_key"]');
+            const apiKeyError = document.getElementById('api-key-error');
+
+            apiKeyInput.addEventListener('input', () => {
+                const value = apiKeyInput.value.trim();
+                if (value && !/^sk-[a-zA-Z0-9]{48}$/.test(value)) {
+                    apiKeyError.textContent = 'API密钥格式不正确，应为sk-后面跟随48位字母数字';
+                    apiKeyError.style.display = 'block';
+                    apiKeyInput.classList.add('is-danger');
+                } else {
+                    apiKeyError.style.display = 'none';
+                    apiKeyInput.classList.remove('is-danger');
+                }
+            });
+
+            const tabs = document.querySelectorAll('.tabs li');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('is-active'));
+                    tab.classList.add('is-active');
+
+                    const target = tab.getAttribute('data-tab');
+                    tabContents.forEach(content => {
+                        content.classList.remove('is-active');
+                        if (content.id === target) {
+                            content.classList.add('is-active');
+                        }
+                    });
+                });
+            });
+
+            document.querySelectorAll('input[type="range"]').forEach(slider => {
+                const valueDisplay = slider.nextElementSibling;
+                valueDisplay.textContent = slider.value;
+
+                slider.addEventListener('input', () => {
+                    valueDisplay.textContent = slider.value;
+                });
+            });
+
+            const localAudioInput = document.getElementById('local-audio');
+            const audioUrlInput = document.getElementById('audio-url');
+            const uploadLocalAudioBtn = document.getElementById('upload-local-audio');
+            const loadAudioUrlBtn = document.getElementById('load-audio-url');
+            const urlError = document.getElementById('url-error');
+
+            uploadLocalAudioBtn.addEventListener('click', async () => {
+                const file = localAudioInput.files[0];
+                if (!file) {
+                    alert('请选择一个音频文件');
+                    return;
+                }
+
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/app/uploadaudio', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.detail || "上传失败");
+
+                    alert('音频上传成功！');
+                } catch (error) {
+                    console.error('上传失败:', error);
+                    alert(`上传失败: ${error.message}`);
+                }
+            });
+
+
+
+
+
+
+            document.getElementById('save-settings').addEventListener('click', async function() {
+    const settingsData = [
+        // ======================== cutting 切割设置 ========================
+        {
+            section: "cutting",
+            key: "cutting_mode",
+            value: document.querySelector('select[name="cutting_mode"]').value
+        },
+
+        // ======================== global 全局设置 ========================
+        {
+            section: "global",
+            key: "use_new_api",
+            value: document.querySelector('input[name="use_new_api"]:checked').value === "true"
+        },
+
+        // ======================== gpt GPT参数设置 ========================
+        {
+            section: "gpt",
+            key: "top_k",
+            value: parseInt(document.querySelector('input[name="top_k"]').value) || 15
+        },
+        {
+            section: "gpt",
+            key: "top_p",
+            value: parseFloat(document.querySelector('input[name="top_p"]').value) || 1
+        },
+        {
+            section: "gpt",
+            key: "temperature",
+            value: parseFloat(document.querySelector('input[name="temperature"]').value) || 1
+        },
+        {
+            section: "gpt",
+            key: "speed",
+            value: parseFloat(document.querySelector('input[name="speed"]').value) || 1
+        },
+        {
+            section: "gpt",
+            key: "if_freeze",
+            value: document.querySelector('input[name="if_freeze"]').checked
+        },
+
+        // ======================== reference 参考音频设置 ========================
+
+        {
+            section: "reference",
+            key: "no_reference_mode",
+            value: document.querySelector('input[name="no_reference_mode"]').checked
+        },
+        {
+            section: "reference",
+            key: "reference_audio_local",
+            value: document.querySelector('input[name="local-audio"]').value.trim() || ""
+        },
+        {
+            section: "reference",
+            key: "reference_audio_url",
+            value: document.querySelector('input[name="audio-url"]').value.trim() || ""
+        },
+        {
+            section: "reference",
+            key: "reference_audio_language",
+            value: document.querySelector('select[name="reference_audio_language"]').value
+        },
+        {
+            section: "reference",
+            key: "reference_audio_text",
+            value: document.querySelector('textarea[name="reference_audio_text"]').value.trim() || ""
+        },
+         {
+            section: "reference",
+            key: "inp_refs",
+            value: (function(){
+                const val = document.querySelector('input[name="inp_refs"]').value.trim();
+                return val === "" ? null : val;
+            })()
+        },
+
+        // ======================== inference 推理设置 ========================
+        {
+            section: "inference",
+            key: "inference_text_language",
+            value: document.querySelector('select[name="inference_text_language"]').value
+        },
+
+        // ======================== minecraft_api_key Minecraft密钥 ========================
+        ...(document.getElementById('minecraft-mode').classList.contains('is-active') ? [{
+            section: "minecraft_api_key",
+            key: "minecraft_api_key",
+            value: document.querySelector('input[name="minecraft_api_key"]').value.trim() || ""
+        }] : []),
+
+        // ======================== mode 模式设置 ========================
+        {
+            section: "mode",
+            key: "mode",
+            value: document.getElementById('minecraft-mode').classList.contains('is-active') ? "minecraft" : "tts"
+        }
+    ];
+                try {
+                    const response = await fetch('/app/setconfig', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(settingsData)
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.detail || "保存失败");
+
+                    alert(`保存成功！更新了 ${result.updated} 个配置项`);
+                } catch (error) {
+                    console.error('保存失败:', error);
+                    alert(`保存失败: ${error.message}`);
+                }
+            });
+
+            document.getElementById('reset-settings').addEventListener('click', async () => {
+                if (!confirm('确定要恢复默认设置吗？')) return;
+
+                try {
+                    const response = await fetch('/app/resetconfig', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ confirm: true })
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) throw new Error(result.detail || "重置失败");
+
+                    alert('已恢复默认设置！');
+                    await initializeSettings();
+                } catch (error) {
+                    console.error('重置失败:', error);
+                    alert(`重置失败: ${error.message}`);
+                }
+            });
+
+
+            async function initializeSettings() {
+                try {
+                    const response = await fetch('/app/getconfig?section=all');
+                    const { value: config } = await response.json();
+
+                    // 模式设置
+                    if (config.mode?.mode === 'minecraft') {
+                            const apiKey = config.minecraft_api_key?.minecraft_api_key || '';
+                            document.querySelector('input[name="minecraft_api_key"]').value = apiKey;
+                            minecraftMode.click();
+                        } else{
+                        ttsMode.click();
+                    }
+
+                    // 全局设置
+                    if (config.global) {
+                        const useNewApi = config.global.use_new_api ?? false;
+                        document.querySelector(`input[name="use_new_api"][value="${useNewApi}"]`).checked = true;
+                    }
+
+                    // 参考音频设置
+                    if (config.reference) {
+                        document.querySelector('input[name="audio-url"]').value = config.reference.reference_audio_url ?? '';
+                        document.querySelector('input[name="local-audio"]').value = config.reference.reference_audio_local ?? '';
+                        document.querySelector('textarea[name="reference_audio_text"]').value = config.reference.reference_audio_text ?? '';
+                        document.querySelector('select[name="reference_audio_language"]').value = config.reference.reference_audio_language ?? 'zh-en';
+                        document.querySelector('input[name="no_reference_mode"]').checked = config.reference.no_reference_mode ?? false;
+                        document.querySelector('input[name="inp_refs"]').value = config.reference.inp_refs ?? '';
+                    }
+
+                    // 推理设置
+                    if (config.inference) {
+                        document.querySelector('select[name="inference_text_language"]').value = config.inference.inference_text_language ?? 'zh-en';
+                    }
+
+                    // 切割设置
+                    if (config.cutting) {
+                        document.querySelector('select[name="cutting_mode"]').value = config.cutting.cutting_mode ?? 'Slice once every 4 sentences';
+                    }
+
+                    // GPT参数设置
+                    if (config.gpt) {
+                        document.querySelector('input[name="top_k"]').value = config.gpt.top_k ?? 15;
+                        document.querySelector('input[name="top_k"]').nextElementSibling.textContent = config.gpt.top_k ?? 15;
+                        document.querySelector('input[name="top_p"]').value = config.gpt.top_p ?? 1;
+                        document.querySelector('input[name="top_p"]').nextElementSibling.textContent = config.gpt.top_p ?? 1;
+                        document.querySelector('input[name="temperature"]').value = config.gpt.temperature ?? 1;
+                        document.querySelector('input[name="temperature"]').nextElementSibling.textContent = config.gpt.temperature ?? 1;
+                        document.querySelector('input[name="speed"]').value = config.gpt.speed ?? 1;
+                        document.querySelector('input[name="speed"]').nextElementSibling.textContent = config.gpt.speed ?? 1;
+                        document.querySelector('input[name="if_freeze"]').checked = config.gpt.if_freeze ?? false;
+                    }
+
+                    console.log('设置初始化完成');
+                } catch (error) {
+                    console.error('初始化设置时出错:', error);
+                    alert('初始化设置时出错，请刷新页面重试');
+                }
+            }
+            initializeSettings();
+        });
+    </script>
+</body>
+</html>

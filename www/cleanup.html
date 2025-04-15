@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>MiddleAPI - 音频清理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --accent: #f72585;
+        }
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .cleanup-card {
+            border-left: 4px solid var(--accent);
+        }
+        .progress-wrapper {
+            margin-top: 20px;
+        }
+        .navbar-item.is-active {
+            background-color: rgba(255,255,255,0.1) !important;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="?html=index.html">
+                <i class="fas fa-code mr-2"></i>
+                <span class="has-text-weight-bold">MiddleAPI</span>
+            </a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div id="navbarBasic" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item" href="?html=index.html">
+                    <i class="fas fa-home mr-2"></i>主页
+                </a>
+                <a class="navbar-item" href="?html=settings.html">
+                    <i class="fas fa-cog mr-2"></i>设置
+                </a>
+                <a class="navbar-item" href="?html=audio_list.html">
+                    <i class="fas fa-music mr-2"></i>音频列表
+                </a>
+                <a class="navbar-item is-active" href="?html=cleanup.html">
+                    <i class="fas fa-trash mr-2"></i>音频清理
+                </a>
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" onclick="alert('请加QQ群：146052965 来反馈您的问题')">
+                            <i class="fas fa-bug mr-2"></i>报告问题
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <section class="section">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-8">
+                    <div class="card cleanup-card">
+                        <div class="card-content">
+                            <h1 class="title">
+                                <i class="fas fa-trash-alt mr-2"></i>音频文件清理
+                            </h1>
+                            
+                            <div class="notification is-warning">
+                                <p><i class="fas fa-exclamation-triangle mr-2"></i>此操作将永久删除音频文件，请谨慎操作！</p>
+                            </div>
+
+                            <div class="field">
+                                <label class="label">保留最近的文件数量</label>
+                                <div class="control">
+                                    <input class="input" type="number" id="keep-last" value="5" min="0">
+                                </div>
+                                <p class="help">设置为0将删除所有音频文件</p>
+                            </div>
+
+                            <div class="field is-grouped">
+                                <div class="control">
+                                    <button class="button is-danger" id="cleanup-btn">
+                                        <i class="fas fa-trash mr-2"></i>执行清理
+                                    </button>
+                                </div>
+                                <div class="control">
+                                    <button class="button is-light" id="check-btn">
+                                        <i class="fas fa-search mr-2"></i>检查文件
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="progress-wrapper" id="progress-wrapper" style="display: none;">
+                                <progress class="progress is-primary" id="cleanup-progress" value="0" max="100">0%</progress>
+                                <p class="has-text-centered" id="progress-text">准备清理...</p>
+                            </div>
+                            <div class="mt-5" id="result-message"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+               <strong>MiddleAPI</strong> by <a href="#" id="lynchpin-link">LynchPin</a>.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            if ($navbarBurgers.length > 0) {
+                $navbarBurgers.forEach(el => {
+                    el.addEventListener('click', () => {
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+            const currentPage = window.location.search.split('=')[1] || 'index.html';
+            document.querySelectorAll('.navbar-item').forEach(item => {
+                const href = item.getAttribute('href');
+                if (href && href.includes(currentPage)) {
+                    item.classList.add('is-active');
+                } else {
+                    item.classList.remove('is-active');
+                }
+            });
+            document.getElementById('check-btn').addEventListener('click', () => {
+                fetch('/audio/list')
+                    .then(response => response.json())
+                    .then(data => {
+                        const resultDiv = document.getElementById('result-message');
+                        resultDiv.innerHTML = `
+                            <article class="message is-info">
+                                <div class="message-header">
+                                    <p>当前音频文件状态</p>
+                                </div>
+                                <div class="message-body">
+                                    <p>音频存储路径: <strong>${data.storage_path}</strong></p>
+                                    <p>音频文件总数: <strong>${data.count}</strong></p>
+                                    <p>最近修改的文件: <strong>${data.files.length > 0 ? data.files[0] : '无'}</strong></p>
+                                </div>
+                            </article>
+                        `;
+                    });
+            });
+            document.getElementById('cleanup-btn').addEventListener('click', () => {
+                const keepLast = parseInt(document.getElementById('keep-last').value);
+                
+                if (isNaN(keepLast) || keepLast < 0) {
+                    alert('请输入有效的保留文件数量！');
+                    return;
+                }
+
+                if (!confirm(`确定要清理音频文件吗？将保留最近的 ${keepLast} 个文件。此操作不可撤销！`)) {
+                    return;
+                }
+
+                const progressWrapper = document.getElementById('progress-wrapper');
+                const progressBar = document.getElementById('cleanup-progress');
+                const progressText = document.getElementById('progress-text');
+                const resultDiv = document.getElementById('result-message');
+                
+                progressWrapper.style.display = 'block';
+                progressBar.value = 0;
+                progressText.textContent = '开始清理...';
+                resultDiv.innerHTML = '';
+
+                fetch(`/audio/cleanup?keep_last=${keepLast}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        progressBar.value = 100;
+                        progressText.textContent = '清理完成！';
+                        resultDiv.innerHTML = `
+                            <article class="message is-success">
+                                <div class="message-header">
+                                    <p>清理成功</p>
+                                </div>
+                                <div class="message-body">
+                                    已成功清理音频文件，保留了最近的 ${keepLast} 个文件。
+                                </div>
+                            </article>
+                        `;
+                    } else {
+                        throw new Error('清理失败');
+                    }
+                })
+                .catch(error => {
+                    progressText.textContent = '清理过程中出错';
+                    resultDiv.innerHTML = `
+                        <article class="message is-danger">
+                            <div class="message-header">
+                                <p>清理失败</p>
+                            </div>
+                            <div class="message-body">
+                                ${error.message}
+                            </div>
+                        </article>
+                    `;
+                });
+            });
+            document.getElementById('lynchpin-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.navbar-item').forEach(item => {
+                    item.classList.remove('is-active');
+                });
+                window.location.href = '?html=lynchpin.html';
+            });
+        });
+    </script>
+</body>
+</html>

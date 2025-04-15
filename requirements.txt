@@ -1,0 +1,7 @@
+fastapi==0.115.7
+uvicorn[standard]==0.30.6
+pydantic==2.10.6
+pydantic_core==2.27.2
+PyYAML==6.0.2
+gradio_client==1.7.0
+aiohttp==3.8.6

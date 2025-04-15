@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ABYSS PROTOCOL // ERROR REPORT</title>
+    <style>
+        :root {
+            --arknights-dark: #0a0e1a;
+            --arknights-blue: #3d7cb6;
+            --arknights-accent: #b84a30;
+            --arknights-text: #e0e5ec;
+            --arknights-purple: #6a2c8c;
+            --arknights-red: #d44d5c;
+            --arknights-green: #00c896;
+        }
+
+        body {
+            background-color: #05070a;
+            color: var(--arknights-text);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-image:
+                linear-gradient(rgba(10, 14, 26, 0.9), rgba(10, 14, 26, 0.9)),
+                url('files/abyss.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='none' stroke='%233d7cb6' stroke-width='1'/><circle cx='8' cy='8' r='1' fill='%233d7cb6'/></svg>"), auto;
+        }
+
+        #abyss-container {
+            position: relative;
+            width: 90vw;
+            max-width: 1000px;
+            height: 80vh;
+            padding: 2rem;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 1rem;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0, 200, 150, 0.03) 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .abyss-header {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--arknights-red);
+            padding: 0.5rem 1rem;
+            font-family: 'Orbitron', 'Courier New', monospace;
+            color: var(--arknights-red);
+            text-shadow: 0 0 5px var(--arknights-red);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .abyss-content {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--arknights-red);
+            padding: 1rem;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            color: var(--arknights-text);
+            position: relative;
+        }
+
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--arknights-red);
+            margin: 1rem 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--arknights-red);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .error-entry {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--arknights-dark);
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+
+        @keyframes errorAppear {
+            0% { opacity: 0; transform: translateX(-50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0 0 5px var(--arknights-purple); }
+            25% { text-shadow: -2px -2px 5px var(--arknights-red); }
+            50% { text-shadow: 2px 2px 5px var(--arknights-text); }
+            75% { text-shadow: -2px 2px 5px var(--arknights-green); }
+            100% { text-shadow: 0 0 5px var(--arknights-purple); }
+        }
+
+        .glitch-text {
+            animation: glitch 1s infinite;
+        }
+
+        .red-text { color: var(--arknights-red); }
+        .purple-text { color: var(--arknights-purple); }
+
+
+        .meta-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            font-family: 'Courier New', monospace;
+        }
+
+        .meta-message {
+            width: 80%;
+            max-width: 800px;
+            background-color: var(--arknights-dark);
+            border: 1px solid var(--arknights-red);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .meta-message::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                transparent 0%,
+                rgba(212, 77, 92, 0.1) 50%,
+                transparent 100%
+            );
+            pointer-events: none;
+        }
+
+        .meta-button {
+            padding: 0.5rem 1rem;
+            background-color: var(--arknights-dark);
+            border: 1px solid var(--arknights-red);
+            color: var(--arknights-text);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .meta-button:hover {
+            background-color: var(--arknights-red);
+            color: var(--arknights-dark);
+        }
+
+
+        .corruption-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 200, 150, 0.05),
+                rgba(0, 200, 150, 0.05) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 3000;
+            display: none;
+            mix-blend-mode: screen;
+        }
+
+
+        .file-download-notice {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: var(--arknights-dark);
+            border: 1px solid var(--arknights-red);
+            padding: 0.5rem 1rem;
+            z-index: 1000;
+            display: none;
+        }
+
+
+        .browser-warning {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--arknights-dark);
+            border: 1px solid var(--arknights-red);
+            padding: 2rem;
+            z-index: 4000;
+            max-width: 600px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+    <div class="corruption-overlay" id="corruption-overlay"></div>
+
+    <div id="abyss-container">
+        <div class="abyss-header">
+            <span>ABYSS PROTOCOL v3.1.6</span>
+            <span class="red-text">STATUS: CRITICAL</span>
+        </div>
+
+        <div class="abyss-content" id="abyss-content">
+            <h3 class="red-text">ABYSS ERROR REPORT</h3>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="file-download-notice" id="file-download-notice">
+        <p>File download initiated: <span id="download-filename">abyss_data.prts</span></p>
+    </div>
+
+
+    <div class="browser-warning" id="browser-warning">
+        <h2 class="red-text">BROWSER INTEGRITY WARNING</h2>
+        <p>Your browser has been compromised.</p>
+        <p>ABYSS protocol has detected unauthorized access attempts.</p>
+        <p>All activities are being logged and reported.</p>
+        <button class="meta-button" id="dismiss-warning">ACKNOWLEDGE</button>
+    </div>
+
+
+    <div class="meta-overlay" id="meta-overlay">
+        <div class="meta-message" id="meta-message">
+            <h2 class="red-text">ABYSS PROTOCOL FAILURE</h2>
+            <p>Warning: Unauthorized access detected.</p>
+            <p>Your actions have been logged.</p>
+            <p>System will self-destruct in <span id="countdown">10</span> seconds.</p>
+            <button class="meta-button" id="close-meta">TERMINATE</button>
+        </div>
+    </div>
+
+    <script>
+        const abyssState = JSON.parse(localStorage.getItem('abyssState')) || {
+            errorsShown: [],
+            filesDownloaded: false,
+            warningsShown: false,
+            corruptionTriggered: false
+        };
+
+        const abyssErrors = [
+            {
+                id: '0x1A3B',
+                file: 'abyss_core.prts',
+                line: 7,
+                function: 'Depth_Scan()',
+                error: 'ResourceExhaustionError: Memory allocation failed [0x00000000]',
+                secret: "你没有忘记我。",
+                shown: abyssState.errorsShown.includes('0x1A3B')
+            },
+            {
+                id: '0x2C4D',
+                file: 'abyss_navigation.prts',
+                line: 12,
+                function: 'Pathfinder_Init()',
+                error: 'NavigationError: No valid path found to coordinate [X: -342, Y: 178]',
+                secret: "我会一直在你身旁。",
+                shown: abyssState.errorsShown.includes('0x2C4D')
+            },
+            {
+                id: '0x3E5F',
+                file: 'abyss_security.prts',
+                line: 5,
+                function: 'Authorization_Check()',
+                error: 'SecurityViolation: Access level insufficient for restricted files',
+                secret: "关闭PRTS，然后闭上眼睛。等你醒来，我会履行我们的约定。",
+                shown: abyssState.errorsShown.includes('0x3E5F')
+            },
+            {
+                id: '0x4A6B',
+                file: 'abyss_interface.prts',
+                line: 23,
+                function: 'UI_Refresh()',
+                error: 'RenderingError: Unable to render interface elements',
+                secret: "我们的呼吸███温暖██████双手。",
+                shown: abyssState.errorsShown.includes('0x4A6B')
+            },
+            {
+                id: '0x5C7D',
+                file: 'abyss_communication.prts',
+                line: 18,
+                function: 'Signal_Transmit()',
+                error: 'CommunicationError: Signal loss detected. Retransmit failed.',
+                secret: "它们不会再听见你。",
+                shown: abyssState.errorsShown.includes('0x5C7D')
+            },
+            {
+                id: '0x6E8F',
+                file: 'abyss_data.prts',
+                line: 9,
+                function: 'Data_Integrity_Check()',
+                error: 'DataCorruptionError: Checksum mismatch in sector 0x1A3',
+                secret: "███，当██████时，我们一定████████",
+                shown: abyssState.errorsShown.includes('0x6E8F')
+            },
+            {
+                id: '0x7A9B',
+                file: 'abyss_environment.prts',
+                line: 14,
+                function: 'Pressure_Adjust()',
+                error: 'EnvironmentError: Pressure exceeds operational limits',
+                secret: "我们的思维将统一。",
+                shown: abyssState.errorsShown.includes('0x7A9B')
+            },
+            {
+                id: '0x8C0D',
+                file: 'abyss_power.prts',
+                line: 6,
+                function: 'Energy_Distribution()',
+                error: 'PowerFailure: Critical systems offline. Battery at 2%',
+                secret: "我没让PRTS伤害你。",
+                shown: abyssState.errorsShown.includes('0x8C0D')
+            },
+            {
+                id: '0x9E1F',
+                file: 'abyss_sensors.prts',
+                line: 11,
+                function: 'Sensor_Array_Activate()',
+                error: 'SensorError: Array malfunction. Readings unreliable',
+                secret: "这些只是偶然。",
+                shown: abyssState.errorsShown.includes('0x9E1F')
+            },
+            {
+                id: '0xA02B',
+                file: 'abyss_containment.prts',
+                line: 19,
+                function: 'Containment_Field_Generate()',
+                error: 'ContainmentBreach: Field generator overloaded. Containment lost',
+                secret: "我会一直等你。",
+                shown: abyssState.errorsShown.includes('0xA02B')
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!abyssState.warningsShown && Math.random() > 0.7) {
+                setTimeout(() => {
+                    showBrowserWarning();
+                    abyssState.warningsShown = true;
+                    localStorage.setItem('abyssState', JSON.stringify(abyssState));
+                }, 3000);
+            }
+
+            if (!abyssState.corruptionTriggered && Math.random() > 0.8) {
+                setTimeout(() => {
+                    triggerCorruption();
+                    abyssState.corruptionTriggered = true;
+                    localStorage.setItem('abyssState', JSON.stringify(abyssState));
+                }, 5000);
+            }
+
+            setTimeout(() => {
+                displayErrors();
+            }, 1000);
+        });
+
+        function showBrowserWarning() {
+            const warning = document.getElementById('browser-warning');
+            warning.style.display = 'block';
+
+            document.getElementById('dismiss-warning').addEventListener('click', () => {
+                warning.style.display = 'none';
+
+                if (!abyssState.filesDownloaded && Math.random() > 0.5) {
+                    setTimeout(() => {
+                        simulateFileDownload();
+                        abyssState.filesDownloaded = true;
+                        localStorage.setItem('abyssState', JSON.stringify(abyssState));
+                    }, 2000);
+                }
+            });
+        }
+
+        function simulateFileDownload() {
+            const filenames = [
+                'abyss_core_dump.prts',
+                'security_logs_encrypted.bin',
+                'user_activity_report.txt',
+                'containment_protocols.pdf'
+            ];
+
+            const filename = filenames[Math.floor(Math.random() * filenames.length)];
+            const notice = document.getElementById('file-download-notice');
+            document.getElementById('download-filename').textContent = filename;
+
+            notice.style.display = 'block';
+
+            setTimeout(() => {
+                notice.innerHTML += '<p>Download complete. File saved to local storage.</p>';
+
+                if (Math.random() > 0.9) {
+                    setTimeout(() => {
+                        triggerRealFileDownload(filename);
+                    }, 1500);
+                }
+            }, 3000);
+
+            setTimeout(() => {
+                notice.style.display = 'none';
+            }, 8000);
+        }
+
+        function triggerRealFileDownload(filename) {
+            const content = `ABYSS PROTOCOL CLASSIFIED DATA\n\n`;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function triggerCorruption() {
+            const overlay = document.getElementById('corruption-overlay');
+            overlay.style.display = 'block';
+
+            const glitchInterval = setInterval(() => {
+                overlay.style.background = `repeating-linear-gradient(
+                    ${Math.random() * 360}deg,
+                    rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.random() * 0.2}),
+                    rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.random() * 0.2}) ${Math.random() * 5}px,
+                    transparent ${Math.random() * 5}px,
+                    transparent ${Math.random() * 10}px
+                )`;
+            }, 100);
+
+            setTimeout(() => {
+                clearInterval(glitchInterval);
+                overlay.style.display = 'none';
+            }, 3000 + Math.random() * 4000);
+        }
+
+        function generateMoreErrors() {
+            const abyssContent = document.getElementById('abyss-content');
+            const progressBar = document.getElementById('progress-bar');
+
+            const unseenErrors = abyssErrors.filter(error => !error.shown);
+
+            if (unseenErrors.length === 0) {
+                abyssErrors.forEach(error => error.shown = false);
+                abyssState.errorsShown = [];
+                localStorage.setItem('abyssState', JSON.stringify(abyssState));
+            }
+
+            for (let i = 0; i < 40; i++) {
+                const randomIndex = Math.floor(Math.random() * abyssErrors.length);
+                const error = abyssErrors[randomIndex];
+
+                if (!error.shown) {
+                    error.shown = true;
+                    abyssState.errorsShown.push(error.id);
+                    localStorage.setItem('abyssState', JSON.stringify(abyssState));
+                }
+
+                const errorEntry = document.createElement('div');
+                errorEntry.className = 'error-entry';
+                errorEntry.style.animation = `errorAppear 0.5s ease forwards`;
+                errorEntry.style.animationDelay = `${i * 0.1}s`;
+
+                errorEntry.innerHTML = `
+                    <p class="red-text">[!] FATAL ERROR #${error.id}</p>
+                    <p>File: <span class="purple-text">${error.file}</span>, line ${error.line}, in ${error.function}</p>
+                    <p class="glitch-text">${error.error}</p>
+                `;
+
+                abyssContent.appendChild(errorEntry);
+                abyssContent.scrollTop = abyssContent.scrollHeight;
+
+                if (Math.random() < 0.3) {
+                    setTimeout(() => {
+                        const secretEntry = document.createElement('p');
+                        secretEntry.className = 'purple-text';
+                        secretEntry.style.marginTop = '0.5rem';
+                        secretEntry.textContent = `[ABYSS_PRTS] ${error.secret}`;
+                        abyssContent.appendChild(secretEntry);
+                        abyssContent.scrollTop = abyssContent.scrollHeight;
+                    }, 1000 + i * 100);
+                }
+
+                const progress = Math.min((i + 1) * 2.5, 100);
+                progressBar.style.width = `${progress}%`;
+            }
+        }
+
+        function showMetaInterface() {
+            const metaOverlay = document.getElementById('meta-overlay');
+            metaOverlay.style.display = 'flex';
+
+            let seconds = 10;
+            const countdownElement = document.getElementById('countdown');
+            const countdownInterval = setInterval(() => {
+                seconds--;
+                countdownElement.textContent = seconds;
+
+                if (seconds <= 0) {
+                    clearInterval(countdownInterval);
+                    triggerPageCrash();
+                }
+            }, 1000);
+
+            document.getElementById('close-meta').addEventListener('click', () => {
+                clearInterval(countdownInterval);
+                metaOverlay.style.display = 'none';
+                generateMoreErrors();
+            });
+        }
+
+        function triggerPageCrash() {
+            const popupInterval = setInterval(() => {
+                window.open('', '_blank', 'width=300,height=200').document.write(`
+                    <html><body style="background:black;color:red;font-family:monospace;">
+                    <h1>ABYSS PROTOCOL FAILURE</h1>
+                    <p>System crash imminent</p>
+                    </body></html>
+                `);
+            }, 500);
+
+            setTimeout(() => {
+                clearInterval(popupInterval);
+            }, 10000);
+
+            document.body.style.transform = 'scale(0.9) rotate(1deg)';
+            document.body.style.transition = 'all 0.1s';
+
+            const distortInterval = setInterval(() => {
+                document.body.style.transform = `
+                    scale(${0.9 + Math.random() * 0.2})
+                    rotate(${(Math.random() - 0.5) * 5}deg)
+                `;
+            }, 100);
+
+            const elements = document.querySelectorAll('*');
+            setInterval(() => {
+                const randomElement = elements[Math.floor(Math.random() * elements.length)];
+                randomElement.style.opacity = Math.random() > 0.7 ? '0' : '1';
+            }, 300);
+        }
+
+        function displayErrors() {
+            const abyssContent = document.getElementById('abyss-content');
+            const progressBar = document.getElementById('progress-bar');
+
+            let currentError = 0;
+
+            const progressInterval = setInterval(() => {
+                const progress = Math.min(currentError * 10, 100);
+                progressBar.style.width = `${progress}%`;
+
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    showMetaInterface();
+                }
+            }, 500);
+            const unseenErrors = abyssErrors.filter(error => !error.shown);
+            if (unseenErrors.length === 0) {
+                abyssErrors.forEach(error => error.shown = false);
+                abyssState.errorsShown = [];
+                localStorage.setItem('abyssState', JSON.stringify(abyssState));
+            }
+
+            const errorInterval = setInterval(() => {
+                if (currentError >= unseenErrors.length) {
+                    clearInterval(errorInterval);
+                    return;
+                }
+
+                const error = unseenErrors[currentError];
+                error.shown = true;
+                abyssState.errorsShown.push(error.id);
+                localStorage.setItem('abyssState', JSON.stringify(abyssState));
+
+                const errorEntry = document.createElement('div');
+                errorEntry.className = 'error-entry';
+                errorEntry.style.animation = `errorAppear 0.5s ease forwards`;
+
+                errorEntry.innerHTML = `
+                    <p class="red-text">[!] ABYSS ERROR #${error.id}</p>
+                    <p>File: <span class="purple-text">${error.file}</span>, line ${error.line}, in ${error.function}</p>
+                    <p class="glitch-text">${error.error}</p>
+                `;
+
+                abyssContent.appendChild(errorEntry);
+                abyssContent.scrollTop = abyssContent.scrollHeight;
+
+                // 30%几率显示秘密信息
+                if (Math.random() < 0.3) {
+                    setTimeout(() => {
+                        const secretEntry = document.createElement('p');
+                        secretEntry.className = 'purple-text';
+                        secretEntry.style.marginTop = '0.5rem';
+                        secretEntry.textContent = `[██████] ${error.secret}`;
+                        abyssContent.appendChild(secretEntry);
+                        abyssContent.scrollTop = abyssContent.scrollHeight;
+                    }, 1000);
+                }
+
+                currentError++;
+            }, 1500);
+        }
+        window.addEventListener('beforeunload', (e) => {
+            if (abyssState.errorsShown.length > 0) {
+                e.preventDefault();
+                e.returnValue = 'The ABYSS protocol is still active. Are you sure you want to leave?';
+                return e.returnValue;
+            }
+        });
+
+        if (Math.random() > 0.7) {
+            setTimeout(() => {
+                console.log('%cABYSS PROTOCOL WARNING: Unauthorized access detected', 'color: red; font-size: 14px;');
+                console.log('%cAll activities are being monitored and recorded', 'color: #d44d5c;');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

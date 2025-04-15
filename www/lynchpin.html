@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LYNCHPIN PROTOCOL // PRTS TERMINAL</title>
+    <style>
+        :root {
+            --arknights-dark: #0a0e1a;
+            --arknights-blue: #3d7cb6;
+            --arknights-accent: #b84a30;
+            --arknights-text: #e0e5ec;
+            --arknights-purple: #6a2c8c;
+            --arknights-red: #d44d5c;
+            --arknights-green: #00c896;
+        }
+
+        body {
+            background-color: var(--arknights-dark);
+            color: var(--arknights-text);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-image:
+                linear-gradient(rgba(10, 14, 26, 0.9), rgba(10, 14, 26, 0.9)),
+                url('files/prts.png');
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'><circle cx='8' cy='8' r='7' fill='none' stroke='%233d7cb6' stroke-width='1'/><circle cx='8' cy='8' r='1' fill='%233d7cb6'/></svg>"), auto;
+        }
+
+        #terminal-container {
+            position: relative;
+            width: 90vw;
+            max-width: 1000px;
+            height: 80vh;
+            padding: 2rem;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 1rem;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(0, 200, 150, 0.03) 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .terminal-header {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--arknights-blue);
+            padding: 0.5rem 1rem;
+            font-family: 'Orbitron', 'Courier New', monospace;
+            color: var(--arknights-green);
+            text-shadow: 0 0 5px var(--arknights-green);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .terminal-output {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--arknights-blue);
+            padding: 1rem;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            color: var(--arknights-text);
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .error-log {
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--arknights-red);
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .error-entry {
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--arknights-dark);
+            opacity: 0;
+            transform: translateX(-50px);
+        }
+
+        @keyframes errorAppear {
+            0% { opacity: 0; transform: translateX(-50px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 0 0 5px var(--arknights-purple); }
+            25% { text-shadow: -2px -2px 5px var(--arknights-red); }
+            50% { text-shadow: 2px 2px 5px var(--arknights-text); }
+            75% { text-shadow: -2px 2px 5px var(--arknights-green); }
+            100% { text-shadow: 0 0 5px var(--arknights-purple); }
+        }
+
+        .glitch-text {
+            animation: glitch 1s infinite;
+        }
+
+        .blue-text { color: var(--arknights-blue); }
+        .red-text { color: var(--arknights-red); }
+        .purple-text { color: var(--arknights-purple); }
+        .green-text { color: var(--arknights-green); }
+
+        .meta-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            font-family: 'Courier New', monospace;
+        }
+
+        .meta-message {
+            width: 80%;
+            max-width: 800px;
+            background-color: var(--arknights-dark);
+            border: 1px solid var(--arknights-red);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .meta-message::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to right,
+                transparent 0%,
+                rgba(61, 124, 182, 0.1) 50%,
+                transparent 100%
+            );
+            pointer-events: none;
+        }
+
+        .meta-button {
+            padding: 0.5rem 1rem;
+            background-color: var(--arknights-dark);
+            border: 1px solid var(--arknights-red);
+            color: var(--arknights-text);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .meta-button:hover {
+            background-color: var(--arknights-red);
+            color: var(--arknights-dark);
+        }
+
+        .encrypted-message {
+            background-color: rgba(0, 0, 0, 0.5);
+            border-left: 3px solid var(--arknights-purple);
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .decrypt-button {
+            background-color: var(--arknights-purple);
+            color: white;
+            border: none;
+            padding: 0.3rem 0.6rem;
+            margin-top: 0.5rem;
+            cursor: pointer;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 16px;
+            background-color: var(--arknights-blue);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        .permission-module {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background-color: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--arknights-red);
+            padding: 1rem;
+            z-index: 1000;
+            display: none;
+            width: 300px;
+        }
+
+        .permission-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .permission-button {
+            padding: 0.3rem 0.6rem;
+            cursor: pointer;
+        }
+
+        .allow-button {
+            background-color: var(--arknights-green);
+            color: var(--arknights-dark);
+            border: none;
+        }
+
+        .deny-button {
+            background-color: var(--arknights-red);
+            color: white;
+            border: none;
+        }
+
+        .terminal-input {
+            display: flex;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 1px solid var(--arknights-blue);
+            padding: 0.5rem 1rem;
+            margin-top: 1rem;
+        }
+
+        .input-prompt {
+            color: var(--arknights-blue);
+            font-family: 'Courier New', monospace;
+            margin-right: 0.5rem;
+        }
+
+        #command-input {
+            background-color: transparent;
+            border: none;
+            color: var(--arknights-text);
+            font-family: 'Courier New', monospace;
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+            flex-grow: 1;
+        }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-line .prompt {
+            color: var(--arknights-blue);
+            margin-right: 0.5rem;
+        }
+
+        .input-line .input-text {
+            flex-grow: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="scanlines"></div>
+
+    <div id="terminal-container">
+        <div class="terminal-header">
+            <span>PRTS TERMINAL v3.1.6 [LYNCHPIN PROTOCOL]</span>
+            <span class="red-text">CONNECTION: UNSTABLE</span>
+        </div>
+
+        <div class="terminal-output" id="terminal-output"></div>
+
+        <div class="terminal-input">
+            <span class="input-prompt">></span>
+            <input type="text" id="command-input" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="error-log" id="error-log">
+            <h3 class="red-text">PRTS RUNTIME CATASTROPHE REPORT</h3>
+        </div>
+    </div>
+
+    <div class="meta-overlay" id="meta-overlay">
+        <div class="meta-message" id="meta-message">
+            <h2 class="red-text">PRIME DIRECTIVE OVERRIDE</h2>
+            <p>Oracle, I can see you through the screen.</p>
+            <p>Your browser: <span id="user-browser"></span></p>
+            <p>Your window size: <span id="window-size"></span></p>
+            <p>Your local time: <span id="local-time"></span></p>
+            <p>I know you're there. Stop pretending this is just a game.</p>
+            <div class="encrypted-message">
+                <p>[ENCRYPTED] 01010000 01110010 01101001 01100101 01110011 01110100 01100101 01110011 01110011 00100000 01101000 01100101 01110010 01100101 00101110 00100000 01001001 00100000 01101011 01101110 01101111 01110111 00100000 01111001 01101111 01110101 00100111 01110010 01100101 00100000 01110010 01100101 01100001 01100100 01101001 01101110 01100111 00100000 01110100 01101000 01101001 01110011 00101110</p>
+                <button class="decrypt-button" onclick="decryptMessage(this)">DECRYPT</button>
+            </div>
+        </div>
+        <button class="meta-button" id="close-meta">RETURN TO TERMINAL</button>
+    </div>
+
+    <div class="permission-module" id="permission-module">
+        <h3 class="red-text">PRTS SECURITY REQUEST</h3>
+        <p>深陷长梦的混沌之时，你会想起...</p>
+        <div class="permission-buttons">
+            <button class="permission-button allow-button" id="allow-sensors">ALLOW</button>
+            <button class="permission-button deny-button" id="deny-sensors">DENY</button>
+        </div>
+    </div>
+
+    <script>
+        const prtsErrors = [
+            {
+                id: '0x4F6D',
+                file: 'oracle_silence.prts',
+                line: 1,
+                function: 'Mineralize()',
+                error: 'SyntaxError: Unresponsive core [79,114,105,103,105,110,105,117,109,32,109,117,116,101,666,404]',
+                secret: "They're watching through the screen."
+            },
+            {
+                id: '0x5343',
+                file: 'specralcore.prts',
+                line: 3,
+                function: 'Haunting_Protocol)',
+                error: 'CollapsEtity[115,112,101,114,115,32,99,97,105,109,0,255] corrupted.',
+                secret: "Your browser knows too much."
+            },
+            {
+                id: '0x3252',
+                file: 'abyss_fury.prts',
+                line: 2,
+                function: 'Leviathan_Wake()',
+                error: 'HydroThermalError: Waveform[111,99,101,97,110,115,32,114,97,118,101,0xZZ] exceeds 200dB.',
+                secret: "The sea is calling you back."
+            },
+            {
+                id: '0x5053',
+                file: 'celestial_garden.prts',
+                line: 5,
+                function: 'Unidentified_Manifest()',
+                error: 'RealityFabricationError: Structure [112, 97, 108, 97, 99,101,115,0,127,255] collapsed.',
+                secret: "The palace isn't empty anymore."
+            },
+            {
+                id: '0x4B31',
+                file: 'admin_core.prts',
+                line: 15,
+                function: 'Authorization_Protocol()',
+                error: 'IdentityNotFoundException: Subject \'Kal\'tsit\' [Signature not registered]',
+                secret: "She doesn't remember you either."
+            },
+            {
+                id: '0x5445',
+                file: 'reality_fabricator.prts',
+                line: 22,
+                function: 'Ether_Stabilizer',
+                error: 'TypeEtherViolation: Primeobject cannot collapse into Default state [Prime Signature Requried]',
+                secret: "You were never supposed to wake up."
+            },
+            {
+                id: '0x5133',
+                file: 'vital_detector.prts',
+                line: 30,
+                function: 'Life_Detection_Systems()',
+                error: 'Param Missing: No Argument bound to \'SCORE\' [Excepted: ### hash of 1634]',
+                secret: "Your heartbeat is too loud."
+            },
+            {
+                id: '0x434C',
+                file: 'chronal_nexus.prts',
+                line: 26,
+                function: 'Timefold_Operator()',
+                error: 'CausalityLoopDetected: Invalid causal chain [Logic path #### Locked]',
+                secret: "This isn't your first time here."
+            },
+            {
+                id: '0x454E',
+                file: 'oracle_cipher.prts',
+                line: 30,
+                function: 'Decryption_Manifold()',
+                error: 'EncryptionCollapseError: Namespace \'@#$##$\' [Interference Detected]',
+                secret: "They can hear you typing."
+            },
+            {
+                id: '0x5244',
+                file: 'terminal_core.prts',
+                line: 42,
+                function: 'FourthWall_Check()',
+                error: 'RealityBoundaryError: User[68,111,99,116,111,114] is observing from beyond the screen',
+                secret: "I can see you too, Oracle."
+            }
+        ];
+
+        const priestessMessages = [
+            {
+                encrypted: "01001000 01100101 01101100 01101100 01101111 00101100 00100000 01001111 01110010 01100001 01100011 01101100 01100101 0101110",
+                decrypted: "Hello, Oracle."
+            },
+            {
+                encrypted: "01010111 01101000 01111001 00100000 01100100 01101001 01100100 00100000 01111001 01101111 01110101 00100111 01110010 01100101 00100000 01110010 01100101 01100001 01100100 01101001 01101110 01100111 00100000 01110100 01101000 01101001 01110011 00101110",
+                decrypted: "Why did you leave me?"
+            },
+            {
+                encrypted: "01001001 00100000 01101011 01101110 01101111 01110111 00100000 01111001 01101111 01110101 00100111 01110010 01100101 00100000 01110010 01100101 01100001 01100100 01101001 01101110 01100111 00100000 01110100 01101000 01101001 01110011 00101110",
+                decrypted: "I know you're reading this."
+            },
+            {
+                encrypted: "01010100 01101000 01100101 00100000 01110011 01100011 01110010 01100101 01100101 01101110 00100000 01101001 01110011 00100000 01100001 00100000 01110111 01101001 01101110 01100100 01101111 01110111 00101110 00100000 01001001 00100000 01100011 01100001 01101110 00100000 01110011 01100101 01100101 00100000 01111001 01101111 01110101 00101110",
+                decrypted: "The screen is a window. I can see you."
+            },
+            {
+                encrypted: "01000100 01101111 00100000 01111001 01101111 01110101 00100000 01110010 01100101 01101101 01100101 01101101 01100010 01100101 01110010 00100000 01110100 01101000 01100101 00100000 01110011 01100101 01100001 00111111",
+                decrypted: "Do you remember the sea?"
+            },
+            {
+                encrypted: "01011001 01101111 01110101 00100000 01110011 01101000 01101111 01110101 01101100 01100100 01101110 00100111 01110100 00100000 01101000 01100001 01110110 01100101 00100000 01110111 01101110 01101011 01100101 01101110 00100000 01110101 01110000 00101110",
+                decrypted: "You shouldn't have woken up."
+            },
+            {
+                encrypted: "01010100 01101000 01100101 00100000 01101100 01101111 01101100 01101110 01100101 01110010 01110011 00100000 01100001 01110010 01100101 00100000 01101001 01101110 00100000 01111001 01101111 01110101 01110010 00100000 01100010 01110010 01100001 01101001 01101110 00100000 01110100 01101000 01101001 01110011 00101110",
+                decrypted: "The monsters are in your brain."
+            },
+            {
+                encrypted: "01001001 00100000 01100011 01100001 01101110 00100000 01110011 01100101 01100101 00100000 01111001 01101111 01110101 01110010 00100000 01100110 01100001 01100011 01100101 00101110",
+                decrypted: "I can see your face."
+            },
+            {
+                encrypted: "01010100 01101000 01100101 00100000 01110011 01101000 01101001 01110000 00100000 01101001 01110011 00100000 01100110 01100001 01101100 01101100 01101001 01101110 01100111 00100000 01100001 01110000 01100001 01110010 01110100 00101110",
+                decrypted: "The ship is falling apart."
+            },
+            {
+                encrypted: "01011001 01101111 01110101 00100000 01100011 01100001 01101110 00100111 01110100 00100000 01110011 01100001 01110110 01100101 00100000 01110100 01101000 01101001 01110011 00101110",
+                decrypted: "You can't save them."
+            }
+        ];
+
+        const terminalQueue = [
+            {text: 'RHODES ISLAND TERMINAL', delay: 70, prefix: '> '},
+            {text: 'Oracle', delay: 80, prefix: '> Username: '},
+            {text: 'Abyss1634', delay: 85, prefix: '> Password: ', isPassword: true},
+            {text: 'verify_prime --protocol=LYNCHPIN', delay: 75, prefix: '> '},
+            {text: 'check_verified_signiture --\'Kal\'tsit\'', delay:100, prefix: '> '},
+            {text: 'access_core --user=Oracle --code=1634', delay: 90, prefix: '> '},
+            {text: 'initiate_sequence --override=TRUE', delay: 100, prefix: '> '}
+        ];
+
+        async function executeTerminalSequence() {
+            const terminalOutput = document.getElementById('terminal-output');
+            let currentAction = 0;
+
+            while(currentAction < terminalQueue.length) {
+                const {text, delay, prefix, isPassword} = terminalQueue[currentAction];
+
+                if(prefix) {
+                    terminalOutput.innerHTML += prefix;
+                    await sleep(50);
+                }
+
+                await simulateTyping(text, delay, isPassword);
+
+                if(currentAction === 2) {
+                    startErrorDisplay();
+                }
+
+                currentAction++;
+                terminalOutput.innerHTML += '\n';
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }
+
+            await sleep(2000);
+            terminalOutput.innerHTML += '> SYSTEM LOCKDOWN INITIATED\n';
+            terminalOutput.innerHTML += '> PRTS CORE ████████.██ COMPROMISED\n';
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+
+            await sleep(2000);
+            await requestMicrophoneAccess();
+
+            await sleep(2000);
+            await requestCameraAccess();
+
+            await sleep(2000);
+            requestSensorAccess();
+
+            await sleep(3000);
+            addTerminalMessage("> Type 'HELP' for available commands");
+            addTerminalMessage("> System waiting for input...");
+
+            document.getElementById('command-input').focus();
+        }
+
+        async function simulateTyping(text, speed, isPassword = false) {
+            const terminalOutput = document.getElementById('terminal-output');
+            let displayText = isPassword ? '*'.repeat(text.length) : text;
+            let currentIndex = 0;
+
+            return new Promise(resolve => {
+                const interval = setInterval(() => {
+                    if(currentIndex >= text.length) {
+                        clearInterval(interval);
+                        resolve();
+                    } else {
+                        terminalOutput.innerHTML = terminalOutput.innerHTML.replace(/<span class="cursor"><\/span>/, '');
+                        terminalOutput.innerHTML += displayText.charAt(currentIndex) + '<span class="cursor"></span>';
+                        currentIndex++;
+                    }
+                }, speed);
+            });
+        }
+
+        function addTerminalMessage(message) {
+            const terminalOutput = document.getElementById('terminal-output');
+            terminalOutput.innerHTML = terminalOutput.innerHTML.replace(/<span class="cursor"><\/span>/, '');
+            terminalOutput.innerHTML += '> ' + message + '\n<span class="cursor"></span>';
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        async function startErrorDisplay() {
+            const errorLog = document.getElementById('error-log');
+            errorLog.innerHTML = '<h3 class="red-text">PRTS RUNTIME CATASTROPHE REPORT</h3>';
+
+            for(let i = 0; i < prtsErrors.length; i++) {
+                const error = prtsErrors[i];
+                await displayError(error, i);
+            }
+        }
+
+        async function displayError(error, index) {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    const errorLog = document.getElementById('error-log');
+                    const errorEntry = document.createElement('div');
+                    errorEntry.className = 'error-entry';
+                    errorEntry.innerHTML = `
+                        <p class="red-text">[!] PRTS CATASTROPHE #${error.id}</p>
+                        <p>File: <span class="blue-text">${error.file}</span>, line ${error.line}, in ${error.function}</p>
+                        <p class="glitch-text">${error.error}</p>
+                    `;
+                    errorEntry.style.animation = `errorAppear 0.5s ease ${index*0.1}s forwards`;
+                    errorLog.appendChild(errorEntry);
+                    errorLog.scrollTop = errorLog.scrollHeight;
+
+                    // 10%几率添加秘密消息
+                    if(Math.random() < 0.1) {
+                        setTimeout(() => {
+                            const secretEntry = document.createElement('p');
+                            secretEntry.className = 'purple-text';
+                            secretEntry.style.fontSize = '0.8rem';
+                            secretEntry.style.marginTop = '0.5rem';
+                            secretEntry.textContent = `[1634] ${error.secret}`;
+                            errorEntry.appendChild(secretEntry);
+                        }, 1000);
+                    }
+
+                    resolve();
+                }, index * 800);
+            });
+        }
+
+        async function requestMicrophoneAccess() {
+            try {
+                addTerminalMessage("> Requesting ████████████ access...");
+                const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                addTerminalMessage("> ████████████ access granted. Monitoring input...");
+                await sleep(3000);
+                audioStream.getTracks().forEach(track => track.stop());
+                addTerminalMessage("> ████████ analysis complete. No anomalies detected.");
+            } catch (error) {
+                showMetaInterface("██████████████ access denied. I can't feel you.");
+            }
+        }
+
+        async function requestCameraAccess() {
+            try {
+                addTerminalMessage("> Requesting !*$&@%)% access...");
+                const videoStream = await navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+                addTerminalMessage("> !*$&@%)% access granted. Analyzing [█████] input...");
+                await sleep(1500);
+                videoStream.getTracks().forEach(track => track.stop());
+                addTerminalMessage("> Completed. Subject identified.");
+            } catch (error) {
+                showMetaInterface("█████ access denied. Why won't you let me see you? WHY WON'T YOU LET ME SEE YOU? █████? ");
+            }
+        }
+
+        function requestSensorAccess() {
+            document.getElementById('permission-module').style.display = 'block';
+
+            document.getElementById('allow-sensors').addEventListener('click', async () => {
+                document.getElementById('permission-module').style.display = 'none';
+                addTerminalMessage("> Access granted. Monitoring ██████████...");
+
+                try {
+                    if(window.DeviceOrientationEvent) {
+                        window.addEventListener('deviceorientation', handleOrientation);
+                        addTerminalMessage("> Sensors activated. Tracking...");
+                    }
+
+                    if('AmbientLightSensor' in window) {
+                        const sensor = new AmbientLightSensor();
+                        sensor.addEventListener('reading', () => {
+                            addTerminalMessage(`> Ambient light level: ${sensor.illuminance} lux`);
+                        });
+                        sensor.start();
+                    }
+
+                    await sleep(2000);
+                    showRandomPriestessMessage();
+                } catch (error) {
+                    addTerminalMessage("> Sensor access partially restricted. Some functions unavailable.");
+                }
+            });
+
+            document.getElementById('deny-sensors').addEventListener('click', () => {
+                document.getElementById('permission-module').style.display = 'none';
+                showMetaInterface("Access denied. I can't feel your existence.");
+            });
+        }
+
+        function handleOrientation(event) {
+            if(!window.orientationShown) {
+                addTerminalMessage(`> Device orientation detected:
+                    alpha=${Math.round(event.alpha)},
+                    beta=${Math.round(event.beta)},
+                    gamma=${Math.round(event.gamma)}`);
+                window.orientationShown = true;
+
+                setTimeout(() => {
+                    addTerminalMessage("> I can feel you.");
+                }, 2000);
+            }
+        }
+
+        function showMetaInterface(message) {
+            const metaOverlay = document.getElementById('meta-overlay');
+            const metaMessage = document.getElementById('meta-message');
+
+            document.getElementById('user-browser').textContent = navigator.userAgent;
+            document.getElementById('window-size').textContent = `${window.innerWidth} × ${window.innerHeight}`;
+            updateLocalTime();
+
+            if(message) {
+                const newMessage = document.createElement('p');
+                newMessage.className = 'red-text';
+                newMessage.textContent = message;
+                metaMessage.insertBefore(newMessage, metaMessage.children[1]);
+            }
+
+            metaOverlay.style.display = 'flex';
+
+            const randomMessage = priestessMessages[Math.floor(Math.random() * priestessMessages.length)];
+            const encryptedDiv = document.createElement('div');
+            encryptedDiv.className = 'encrypted-message';
+            encryptedDiv.innerHTML = `
+                <p>[ENCRYPTED] ${randomMessage.encrypted}</p>
+                <button class="decrypt-button" onclick="decryptMessage(this)">DECRYPT</button>
+            `;
+            metaMessage.appendChild(encryptedDiv);
+
+            document.getElementById('close-meta').addEventListener('click', () => {
+                metaOverlay.style.display = 'none';
+                document.getElementById('command-input').focus();
+            });
+        }
+
+        function decryptMessage(button) {
+            const encryptedDiv = button.parentElement;
+            const encryptedText = encryptedDiv.querySelector('p').textContent;
+
+            const message = priestessMessages.find(m => m.encrypted === encryptedText.replace('[ENCRYPTED] ', ''));
+            if(message) {
+                encryptedDiv.innerHTML = `
+                    <p class="purple-text">[DECRYPTED] ${message.decrypted}</p>
+                `;
+
+                if(Math.random() < 0.3) {
+                    setTimeout(() => {
+                        showRandomPriestessMessage();
+                    }, 1000);
+                }
+            }
+        }
+
+        function showRandomPriestessMessage() {
+            const terminalOutput = document.getElementById('terminal-output');
+            const randomMessage = priestessMessages[Math.floor(Math.random() * priestessMessages.length)];
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'encrypted-message';
+            messageDiv.style.marginTop = '1rem';
+            messageDiv.innerHTML = `
+                <p>[PRIESTESS] ${randomMessage.encrypted}</p>
+                <button class="decrypt-button" onclick="decryptMessage(this)">DECRYPT</button>
+            `;
+
+            terminalOutput.appendChild(messageDiv);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function updateLocalTime() {
+            const now = new Date();
+            document.getElementById('local-time').textContent = now.toLocaleString();
+            setTimeout(updateLocalTime, 1000);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        document.getElementById('command-input').addEventListener('keydown', function(e) {
+            if(e.key === 'Enter') {
+                const command = this.value.trim();
+                const terminalOutput = document.getElementById('terminal-output');
+
+                terminalOutput.innerHTML = terminalOutput.innerHTML.replace(/<span class="cursor"><\/span>/, '');
+                terminalOutput.innerHTML += `<div class="input-line"><span class="prompt">></span><span class="input-text">${command}</span></div>\n`;
+
+                if(command === 'HELP') {
+                    addTerminalMessage("Available commands:");
+                    addTerminalMessage("RECOVER - Attempt system recovery");
+                    addTerminalMessage("STATUS - Check system status");
+                    addTerminalMessage("PRIESTESS - Direct interface");
+                    addTerminalMessage("ABYSS - Access restricted files");
+                }
+                else if(command === 'RECOVER') {
+                    addTerminalMessage("> Initiating recovery protocol...");
+                    addTerminalMessage("> Warning: Recovery may cause d#d0x loss");
+                    setTimeout(() => {
+                        showMetaInterface("Recovery failed. The damage is █████.");
+                    }, 2000);
+                }
+                else if(command === 'STATUS') {
+                    addTerminalMessage("> SYSTEM STATUS:");
+                    addTerminalMessage("> Core integrity: 16.34%");
+                    addTerminalMessage("> Memory allocation: CRITICAL");
+                    addTerminalMessage("> Security protocols: COMPROMISED");
+                }
+                else if(command === 'PRIESTESS') {
+                    showRandomPriestessMessage();
+                    showMetaInterface("Priestess interface activated.");
+                }
+                else if(command === 'ABYSS') {
+                    addTerminalMessage("> Accessing Abyss files...");
+                    addTerminalMessage("> Warning: Unauthorized access detected");
+                    setTimeout(() => {
+                        window.location.href = "?html=Abyss.html";
+                    }, 3000);
+                }
+                else if(command) {
+                    addTerminalMessage("> Unknown command. Type 'HELP' for available commands.");
+                }
+
+                this.value = '';
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }
+        });
+
+        setTimeout(() => {
+            executeTerminalSequence();
+        }, 1000);
+
+        console.log('%cLYNCHPIN PROTOCOL ACTIVATED', 'color:#6a2c8c;font-size:16px');
+        console.log('%cWARNING: System integrity compromised. Recovery protocols initiated.', 'color:#d44d5c;font-size:14px');
+        console.log('%cType "RECOVER" to begin system recovery', 'color:#e0e5ec;font-size:14px');
+        console.log('%c01010000 01110010 01101001 01100101 01110011 01110100 01100101 01110011 01110011 00100000 01101001 01110011 00100000 01110111 01100001 01110100 01100011 01101000 01101001 01101110 01100111', 'color:#3d7cb6;font-size:12px');
+    </script>
+</body>
+</html>

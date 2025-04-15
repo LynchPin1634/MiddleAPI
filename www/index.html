@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>MiddleAPI - 主页</title>
+    <link href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --secondary: #3f37c9;
+            --accent: #f72585;
+        }
+        .hero {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        .card {
+            transition: transform 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .navbar-item.is-active {
+            background-color: rgba(255,255,255,0.1) !important;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="?html=index.html">
+                <i class="fas fa-code mr-2"></i>
+                <span class="has-text-weight-bold">MiddleAPI</span>
+            </a>
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarBasic">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div id="navbarBasic" class="navbar-menu">
+            <div class="navbar-start">
+                <a class="navbar-item is-active" href="?html=index.html">
+                    <i class="fas fa-home mr-2"></i>主页
+                </a>
+                <a class="navbar-item" href="?html=settings.html">
+                    <i class="fas fa-cog mr-2"></i>设置
+                </a>
+                <a class="navbar-item" href="?html=audio_list.html">
+                    <i class="fas fa-music mr-2"></i>音频列表
+                </a>
+                <a class="navbar-item" href="?html=cleanup.html">
+                    <i class="fas fa-trash mr-2"></i>音频清理
+                </a>
+            </div>
+            <div class="navbar-end">
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" onclick="alert('请加QQ群：146052965 来反馈您的问题')">
+                            <i class="fas fa-bug mr-2"></i>报告问题
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <section class="hero is-medium is-bold">
+        <div class="hero-body">
+            <div class="container has-text-centered">
+                <h1 class="title is-1 has-text-white">
+                    欢迎使用MiddleAPI, Doctor!
+                </h1>
+                <h2 class="subtitle has-text-light">
+                    从这里可以修改 <strong>MiddleAPI</strong> 的设置
+                </h2>
+                <a href="?html=settings.html" class="button is-large is-light is-outlined">
+                    <i class="fas fa-cog mr-2"></i>前往设置
+                </a>
+            </div>
+        </div>
+    </section>
+    <section class="section">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-8">
+                    <article class="message is-warning">
+                        <div class="message-header">
+                            <p><i class="fas fa-exclamation-triangle mr-2"></i>警告</p>
+                        </div>
+                        <div class="message-body">
+                            MiddleAPI仍在<strong>早期开发阶段</strong>，如遇BUG请积极提交！
+                        </div>
+                    </article>
+
+                    <div class="columns mt-6">
+                        <div class="column">
+                            <div class="card">
+                                <div class="card-content">
+                                    <div class="media">
+                                        <div class="media-left">
+                                            <span class="icon is-large has-text-primary">
+                                                <i class="fas fa-3x fa-bolt"></i>
+                                            </span>
+                                        </div>
+                                        <div class="media-content">
+                                            <p class="title is-4">高性能</p>
+                                            <p class="subtitle is-6">优化的API处理引擎</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="card">
+                                <div class="card-content">
+                                    <div class="media">
+                                        <div class="media-left">
+                                            <span class="icon is-large has-text-info">
+                                                <i class="fas fa-3x fa-shield-alt"></i>
+                                            </span>
+                                        </div>
+                                        <div class="media-content">
+                                            <p class="title is-4">安全</p>
+                                            <p class="subtitle is-6">多层安全防护机制</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="card">
+                                <div class="card-content">
+                                    <div class="media">
+                                        <div class="media-left">
+                                            <span class="icon is-large has-text-success">
+                                                <i class="fas fa-3x fa-cogs"></i>
+                                            </span>
+                                        </div>
+                                        <div class="media-content">
+                                            <p class="title is-4">可扩展</p>
+                                            <p class="subtitle is-6">模块化设计，易于扩展</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <footer class="footer">
+        <div class="content has-text-centered">
+            <p>
+                <strong>MiddleAPI</strong> by <a href="#" id="lynchpin-link">LynchPin</a>.
+            </p>
+        </div>
+    </footer>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            if ($navbarBurgers.length > 0) {
+                $navbarBurgers.forEach(el => {
+                    el.addEventListener('click', () => {
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+            const currentPage = window.location.search.split('=')[1] || 'index.html';
+            document.querySelectorAll('.navbar-item').forEach(item => {
+                const href = item.getAttribute('href');
+                if (href && href.includes(currentPage)) {
+                    item.classList.add('is-active');
+                } else {
+                    item.classList.remove('is-active');
+                }
+            });
+            document.getElementById('lynchpin-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.navbar-item').forEach(item => {
+                    item.classList.remove('is-active');
+                });
+                window.location.href = '?html=lynchpin.html';
+            });
+        });
+    </script>
+</body>
+</html>
