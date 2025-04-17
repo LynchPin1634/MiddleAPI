@@ -226,10 +226,6 @@ MiddleAPI/
     ├── settings.html     # 设置页面
     ├── audio_list.html   # 音频列表页面
     ├── cleanup.html      # 音频清理页面
-    ├── abyss.html        # Abyss 页面
-    └── lynchpin.html     # LynchPin 页面
-      └── files/*         # 网页资源目录
-    
 ```
 
 ### 自定义功能
