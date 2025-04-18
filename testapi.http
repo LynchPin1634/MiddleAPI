@@ -1,0 +1,63 @@
+# Test your FastAPI endpoints
+###
+POST http://127.0.0.1:8000/app/getconfig?section=mode
+Content-Type: application/json
+Accept: application/json
+
+{}
+###
+
+###
+POST http://127.0.0.1:8000/app/resetconfig
+Content-Type: application/json
+Accept: application/json
+
+{}
+###
+
+###
+POST http://127.0.0.1:8000/audio/cleanup
+Content-Type: application/json
+Accept: application/json
+
+{}
+###
+
+###
+POST http://127.0.0.1:8000/app/setconfig
+Content-Type: application/json
+Accept: application/json
+
+{
+    "section":"gpt",
+    "key":"top_k",
+    "value": 1
+}
+###
+###
+POST http://127.0.0.1:8000/v1/chat/completions
+Content-Type: application/json
+Accept: application/json
+
+{
+  "messages": [{"role": "user", "content": "Hello!"}],
+  "model": "deepseek-r1",
+  "api_key": "sk-12345678abcdefgh12345678abcdefgh12345678abcdefgh",
+  "config": {"key": "value"}
+}
+
+
+###
+
+###
+POST http://127.0.0.1:8000/audio/speech
+Content-Type: application/json
+Accept: application/json
+
+{
+  "input": "test",
+  "voice": "中文"
+}
+###
+
+
