@@ -19,8 +19,8 @@ class OpenWebUIObj(BaseModel):
     TTS请求参数模型
     - 用于/audio/speech接口
     """
-    input: str  # 要转换为语音的文本
-    voice: str  # 语音类型/角色
+    input: str  # 文本
+    voice: str  # 语音类型
 
 class SetConfigObj(BaseModel):
     section: str  # 必填字段

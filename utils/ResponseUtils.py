@@ -23,6 +23,7 @@ import logging
 T = TypeVar('T')
 
 class ErrorTypes:
+    CONFIG_READ_ERROR = "config_read_error"
     CONFIG_WRITE_ERROR = "config_write_error"
     FILE_NOT_FOUND = "file_not_found"
     CONFIG_NOT_FOUND = "config_not_found"
@@ -37,6 +38,9 @@ class ResponseHandler:
 
     @staticmethod
     def success(
+            section:Any = None,
+            key:Any = None,
+            value:Any = None,
             data: Any = None,
             message: str = "操作成功",
             code: int = 200,
@@ -47,7 +51,11 @@ class ResponseHandler:
             "status": "success",
             "code": code,
             "message": message,
-            "data": data
+            "data": data,
+            "section": section,
+            "key":key,
+            "value": value
+
         }
         response_data.update(extra)
         return JSONResponse(content=response_data, status_code=code)
@@ -88,7 +96,7 @@ class ResponseHandler:
         if not api_key:
             raise ResponseHandler.error(
                 message="无效的API密钥",
-                code=401,
+                code=500,
                 error_type=ErrorTypes.INVALID_API_KEY
             )
 

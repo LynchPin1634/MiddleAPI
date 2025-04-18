@@ -652,7 +652,7 @@
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.detail || "保存失败");
 
-                    alert(`保存成功！更新了 ${result.updated} 个配置项`);
+                    alert(`保存成功！`);
                 } catch (error) {
                     console.error('保存失败:', error);
                     alert(`保存失败: ${error.message}`);

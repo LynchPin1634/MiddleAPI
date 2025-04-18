@@ -13,11 +13,11 @@
 from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 from fastapi import FastAPI,Depends
-from collections import OrderedDict
 from typing import List, Union
 from collections import deque
 from pathlib import Path
 
+import uvicorn
 import logging
 import aiohttp
 import hashlib
@@ -26,11 +26,12 @@ import os
 
 from starlette.staticfiles import StaticFiles
 
-from utils.ProxyService import handle_proxy_request, ChatRequest  # 导入ProxyService
-from utils.GradioUtils import GradioClient
 from utils.PydanticUtils import OpenWebUIObj, SetConfigObj, GetConfigObj, ResetConfigObj
-from utils.ConfigUtils import ConfigTools
+from utils.ProxyService import handle_proxy_request, ChatRequest
 from utils.ResponseUtils import ResponseHandler, ErrorTypes
+from utils.GradioUtils import GradioClient
+from utils.ConfigUtils import ConfigTools
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -42,7 +43,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("MiddleAPI")
 
-AUDIO_STORAGE = Path("../config/middlemod/tts_audio_storage")
+AUDIO_STORAGE = Path("config/tts_audio_storage")
 AUDIO_STORAGE.mkdir(exist_ok=True, parents=True)
 RECENT_FILES = deque(maxlen=5)
 
@@ -75,8 +76,8 @@ app = FastAPI(
     title="MiddleAPI",
     description="主API服务，包含路由注册和核心功能",
     version="2.0.0",
-    docs_url="/api/docs",
-    redoc_url="/api/redoc"
+    docs_url="/api/docs", #可调用的API文档
+    redoc_url="/api/redoc" #只读API文档
 )
 
 app.mount("/files", StaticFiles(directory="www/files"), name="files")
@@ -97,7 +98,7 @@ def cleanup_old_files(keep_last: int = 5):
         logger.error(f"清理失败: {str(e)}")
 
 def make_http_error(status_code: int, detail: str, error_type: str = None):
-    """除setting路由外的统一处理错误响应方法"""
+    """统一处理错误响应方法"""
     return ResponseHandler.error(
         message=detail,
         code=status_code,
@@ -222,7 +223,7 @@ async def set_config(config_items: Union[SetConfigObj, List[SetConfigObj]]):
 
     for item in items:
         if item.section not in config:
-            config[item.section] = OrderedDict()
+            config[item.section] = dict
         config[item.section][item.key] = item.value
 
     if cm.write_config(config) != 0:
@@ -232,7 +233,6 @@ async def set_config(config_items: Union[SetConfigObj, List[SetConfigObj]]):
         )
 
     return ResponseHandler.success(data={"updated": len(items)})
-
 
 @app.post("/app/resetconfig")
 @ResponseHandler.handle_errors
@@ -245,32 +245,38 @@ async def reset_config(confirm: ResetConfigObj):
         )
 
     cm = ConfigTools("config/config.yaml")
-        # 严格按照顺序
-    default_config = OrderedDict([
-            ("cutting", OrderedDict([("cutting_mode", "Slice once every 4 sentences")])),
-            ("global", OrderedDict([("use_new_api", False)])),
-            ("gpt", OrderedDict([
-                ("temperature", 0.65),
-                ("top_k", 15),
-                ("top_p", 0),
-                ("speed", 1),
-                ("if_freeze", False)
-            ])),
-            ("reference", OrderedDict([
-                ("no_reference_mode", False),
-                ("reference_audio_local", ""),
-                ("reference_audio_url",
-                 "https://fs-im-kefu.7moor-fs1.com/ly/4d2c3f00-7d4c-11e5-af15-41bf63ae4ea0/1739002890857/audio.wav"),
-                ("reference_audio_language", "Chinese"),
-                ("reference_audio_text",
-                 "阿米娅看上去还是这么瘦弱，这个年纪的孩子，个子是不是应该更高一点才对？她到底有没有好好吃饭呢。"),
-                ("inp_refs", None)
-            ])),
-            ("inference", OrderedDict([("inference_text_language", "中英混合")])),
-            ("minecraft_api_key",
-             OrderedDict([("minecraft_api_key", "sk-12345678abcdefgh12345678abcdefgh12345678abcdefgh")])),
-            ("mode", OrderedDict([("mode", "tts")]))
-        ])
+    default_config = {
+        "cutting": {
+            "cutting_mode": "Slice once every 4 sentences"
+        },
+        "global": {
+            "use_new_api": False
+        },
+        "gpt": {
+            "temperature": 0.65,
+            "top_k": 15,
+            "top_p": 0,
+            "speed": 1,
+            "if_freeze": False
+        },
+        "reference": {
+            "no_reference_mode": False,
+            "reference_audio_local": "",
+            "reference_audio_url": "https://fs-im-kefu.7moor-fs1.com/ly/4d2c3f00-7d4c-11e5-af15-41bf63ae4ea0/1739002890857/audio.wav",
+            "reference_audio_language": "Chinese",
+            "reference_audio_text": "阿米娅看上去还是这么瘦弱，这个年纪的孩子，个子是不是应该更高一点才对？她到底有没有好好吃饭呢。",
+            "inp_refs": None
+        },
+        "inference": {
+            "inference_text_language": "中英混合"
+        },
+        "minecraft_api_key": {
+            "minecraft_api_key": "sk-12345678abcdefgh12345678abcdefgh12345678abcdefgh"
+        },
+        "mode": {
+            "mode": "tts"
+        }
+    }
 
 
     if cm.write_config(default_config) != 0:
@@ -295,22 +301,42 @@ async def get_config(gc: GetConfigObj = Depends()):
     config = cm.read_config()
 
     if gc.section == "all":
-        return {"msg": "OK", "code": 0, "value": config}
+        return ResponseHandler.success(
+            message="OK",
+            code=200,
+            value=config
+        )
 
     if gc.key is None:
         if gc.section in config:
-            return {"msg": "OK", "code": 0, "section": gc.section, "value": config[gc.section]}
+            return ResponseHandler.success(
+                message="OK",
+                code=200,
+                value=config[gc.section]
+            )
+
         else:
-            return {"msg": "FAILED", "code": 1, "detail": "Section not found"}
+            return ResponseHandler.error(
+                message="FAILED",
+                code=500,
+                details="Section not found"
+            )
 
     if gc.section in config and gc.key in config[gc.section]:
-        return {"msg": "OK", "code": 0, "section": gc.section, "key": gc.key, "value": config[gc.section][gc.key]}
-    return {"msg": "FAILED", "code": 1, "detail": "Key not found"}
-
-
+        return ResponseHandler.success(
+            message="OK",
+            code=200,
+            section = gc.section,
+            key=gc.key,
+            value=config[gc.section][gc.key]
+        )
+    return ResponseHandler.error(
+        message="FAILED",
+        code=500,
+        details="Key not found"
+    )
 
 if __name__ == "__main__":
-    import uvicorn
 
     uvicorn.run(
         "MiddleAPI:app",
