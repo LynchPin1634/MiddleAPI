@@ -15,7 +15,9 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI,Depends
 from typing import List, Union
 from collections import deque
+from fastapi import Response
 from pathlib import Path
+
 
 import uvicorn
 import logging
@@ -24,6 +26,7 @@ import hashlib
 import shutil
 import os
 
+from starlette.responses import JSONResponse
 from starlette.staticfiles import StaticFiles
 
 from utils.PydanticUtils import OpenWebUIObj, SetConfigObj, GetConfigObj, ResetConfigObj
@@ -31,17 +34,18 @@ from utils.ProxyService import handle_proxy_request, ChatRequest
 from utils.ResponseUtils import ResponseHandler, ErrorTypes
 from utils.GradioUtils import GradioClient
 from utils.ConfigUtils import ConfigTools
+from utils.LogUtils import LogUtils
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('middleapi.log')
-    ]
+logger = LogUtils.init_logging(
+    name="MiddleAPI",
+    log_file=Path("middleapi.log"),
+    suppress_libs={
+        "httpx": logging.WARNING,
+        "gradio_client": logging.WARNING,
+        "urllib3": logging.WARNING  # 可选
+    }
 )
-logger = logging.getLogger("MiddleAPI")
 
 AUDIO_STORAGE = Path("config/tts_audio_storage")
 AUDIO_STORAGE.mkdir(exist_ok=True, parents=True)
@@ -105,6 +109,7 @@ def make_http_error(status_code: int, detail: str, error_type: str = None):
         error_type=error_type
     )
 
+
 # ========== 路由注册 ==========
 @app.get("/", response_class=HTMLResponse)
 @ResponseHandler.handle_errors
@@ -129,23 +134,28 @@ async def root(html="index.html"):
     return HTMLResponse(content=file_path.read_text(encoding="utf-8"), media_type="text/html")
 
 # 注册ProxyService路由
-@app.post("/v1/chat/completions")
+@app.post("/chat/completions")
 @ResponseHandler.handle_errors
 async def proxy_chat(request_data: ChatRequest):
         """代理方法"""
         cm = ConfigTools("config/config.yaml")
         config = cm.read_config()
         api_key = config.get("minecraft_api_key", {}).get("minecraft_api_key", "")
+        proxy_url = config.get("minecraft_api_key", {}).get("minecraft_proxy_url", "")
 
         ResponseHandler.validate_api_key(api_key)  # 统一验证
+
+        proxy_config = PROXY_CONFIG.copy()
+        proxy_config["API_URL"] = proxy_url if proxy_url else "https://api.302ai.cn/v1"
 
         result = await handle_proxy_request(
             request_data=request_data,
             api_key=api_key,
-            config=PROXY_CONFIG
+            config=proxy_config
         )
-        return ResponseHandler.success(data=result)
-
+        logger.info(result)
+        return JSONResponse(content=result, status_code=200)
+        #return ResponseHandler.success(data=result)
 
 @app.post("/audio/speech")
 @ResponseHandler.handle_errors
@@ -165,7 +175,7 @@ async def tts(openjson: OpenWebUIObj):
     if output_path.exists():
         logger.info(f"使用缓存音频: {audio_hash}")
         RECENT_FILES.append(output_path)
-        return ResponseHandler.handle_file_response(output_path)
+        return await _build_audio_response(output_path)
 
     logger.info(f"生成新音频: {openjson.input[:50]}...")
     temp_path = GradioClient.inference(openjson.voice, openjson.input)
@@ -176,9 +186,19 @@ async def tts(openjson: OpenWebUIObj):
         oldest_file = RECENT_FILES.popleft()
         oldest_file.unlink(missing_ok=True)
 
-    return ResponseHandler.handle_file_response(output_path)
+    return await _build_audio_response(output_path)
 
-
+async def _build_audio_response(file_path: Path) -> Response:
+    """跨域音频响应"""
+    headers = {
+        "Access-Control-Allow-Origin": "*"
+        }
+    with open(file_path, "rb") as f:
+        return Response(
+            content=f.read(),
+            media_type="audio/wav",
+            headers=headers
+        )
 @app.post("/audio/cleanup")
 @ResponseHandler.handle_errors
 async def force_cleanup(keep_last: int = 0):
@@ -187,7 +207,7 @@ async def force_cleanup(keep_last: int = 0):
     return ResponseHandler.success(data={"keep_last": keep_last})
 
 
-@app.get("/audio-list", response_class=HTMLResponse)
+@app.get("/audiolist", response_class=HTMLResponse)
 @ResponseHandler.handle_errors
 async def audio_list_page():
     """音频文件查看页面"""
@@ -271,7 +291,8 @@ async def reset_config(confirm: ResetConfigObj):
             "inference_text_language": "中英混合"
         },
         "minecraft_api_key": {
-            "minecraft_api_key": "sk-12345678abcdefgh12345678abcdefgh12345678abcdefgh"
+            "minecraft_api_key": "sk-12345678abcdefgh12345678abcdefgh12345678abcdefgh",
+            "minecraft_proxy_url": ""
         },
         "mode": {
             "mode": "tts"
@@ -343,6 +364,6 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         log_level="info",
-        reload=False, #开发请设置为True
+        reload=True, #开发请设置为True
         workers=4
     )

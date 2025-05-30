@@ -11,9 +11,10 @@ gpt:
 inference:
   inference_text_language: 中英混合
 minecraft_api_key:
-  minecraft_api_key: sk-12345678abcdefgh12345678abcdefgh12345678abcdefgh
+  minecraft_api_key: ''
+  minecraft_proxy_url: https://
 mode:
-  mode: tts
+  mode: minecraft
 reference:
   inp_refs: null
   no_reference_mode: false

@@ -90,7 +90,7 @@
                 <a class="navbar-item is-active" href="?html=settings.html">
                     <i class="fas fa-cog mr-2"></i>设置
                 </a>
-                <a class="navbar-item" href="?html=audio_list.html">
+                <a class="navbar-item" href="?html=audiolist.html">
                     <i class="fas fa-music mr-2"></i>音频列表
                 </a>
                 <a class="navbar-item" href="?html=cleanup.html">
@@ -147,7 +147,19 @@
                                 </div>
                                 <!-- MindCraft API密钥输入 -->
                                 <div class="field mt-4" id="minecraft-api-field" style="display: none;">
-                                    <label class="label">MindCraft API密钥</label>
+                                    <div class="field mt-4">
+                                        <label class="label">API代理服务器地址</label>
+                                        <div class="control has-icons-left">
+                                            <input class="input" type="text" name="minecraft_proxy_url"
+                                                    placeholder="https://api.example.com/v1"
+                                                    pattern="https?://.+">
+                                            <span class="icon is-small is-left">
+                                                <i class="fas fa-server"></i>
+                                            </span>
+                                        </div>
+                                        <p class="help api-key-help">只需输入基础地址（如 https://api.example.com/v1），系统会自动添加/chat/completions</p>
+                                </div>
+                                    <label class="label">API代理服务器地址密钥</label>
                                     <div class="control has-icons-left">
                                         <input class="input api-key-input" type="password" name="minecraft_api_key"
                                                placeholder="sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
@@ -628,11 +640,15 @@
             value: document.querySelector('select[name="inference_text_language"]').value
         },
 
-        // ======================== minecraft_api_key Minecraft密钥 ========================
+        // ======================== minecraft_api_key Mindcraft url 与 apikey ========================
         ...(document.getElementById('minecraft-mode').classList.contains('is-active') ? [{
             section: "minecraft_api_key",
             key: "minecraft_api_key",
             value: document.querySelector('input[name="minecraft_api_key"]').value.trim() || ""
+        },{
+            section: "minecraft_api_key",
+            key: "minecraft_proxy_url",
+            value: document.querySelector('input[name="minecraft_proxy_url"]').value.trim() || ""
         }] : []),
 
         // ======================== mode 模式设置 ========================
@@ -693,6 +709,10 @@
                             minecraftMode.click();
                         } else{
                         ttsMode.click();
+                    }
+                    if (config.minecraft_api_key) {
+                        const proxyUrl = config.minecraft_api_key.minecraft_proxy_url || '';
+                        document.querySelector('input[name="minecraft_proxy_url"]').value = proxyUrl;
                     }
 
                     // 全局设置

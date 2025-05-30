@@ -11,15 +11,15 @@
 # Copyright 2025 Ashley Lee (nekokecore@emtips.net)
 
 from typing import Dict, Any, List, Optional
+from utils.LogUtils import LogUtils
 from pydantic import BaseModel
 
 import aiohttp
-import logging
 import re
 
 from utils.ResponseUtils import ResponseHandler, ErrorTypes
 
-logger = logging.getLogger("MiddleAPI.ProxyService")
+logger = LogUtils.get_logger("GradioUtils")
 
 class ChatRequest(BaseModel):
     messages: List[Dict[str, str]]
@@ -44,9 +44,11 @@ async def handle_proxy_request(
         data = _sanitize_request(request_data.dict(), config)
         logger.info(f"处理代理请求: model={data.get('model')}")
 
+        api_url = config["API_URL"].rstrip('/') + '/chat/completions'
+
         async with aiohttp.ClientSession() as session:
             api_response = await session.post(
-                config["API_URL"],
+                api_url,  # 使用处理后的完整URL
                 json=data,
                 headers={
                     "Authorization": f"Bearer {api_key}",

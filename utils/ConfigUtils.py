@@ -14,8 +14,9 @@ import logging
 import yaml
 import os
 
+from utils.LogUtils import LogUtils
 
-logger = logging.getLogger("MiddleAPI")
+logger = LogUtils.get_logger("ConfigUtils")
 
 
 class ConfigTools:

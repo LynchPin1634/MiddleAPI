@@ -55,8 +55,8 @@
                 <a class="navbar-item" href="?html=settings.html">
                     <i class="fas fa-cog mr-2"></i>设置
                 </a>
-                <a class="navbar-item" href="?html=tts_inference.html">
-                    <i class="fas fa-microphone-alt mr-2"></i>TTS接口
+                <a class="navbar-item" href="?html=audiolist.html">
+                    <i class="fas fa-music mr-2"></i>音频列表
                 </a>
                 <a class="navbar-item" href="?html=cleanup.html">
                     <i class="fas fa-trash mr-2"></i>音频清理
@@ -115,7 +115,7 @@
     <footer class="footer">
         <div class="content has-text-centered">
             <p>
-                <strong>MiddleAPI</strong> by <a href="#">LynchPin</a>. © 2025
+                <strong>MiddleAPI</strong> by <a href="#" id="lynchpin-link">LynchPin</a>.
             </p>
         </div>
     </footer>
@@ -144,6 +144,13 @@
                 } else {
                     item.classList.remove('is-active');
                 }
+            });
+            document.getElementById('lynchpin-link').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.querySelectorAll('.navbar-item').forEach(item => {
+                    item.classList.remove('is-active');
+                });
+                window.location.href = '?html=lynchpin.html';
             });
 
             // Load audio list
@@ -209,6 +216,7 @@
                                 location.reload();
                             }
                         });
+
                 }
             });
         });
