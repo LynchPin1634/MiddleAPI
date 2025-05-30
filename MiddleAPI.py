@@ -155,7 +155,6 @@ async def proxy_chat(request_data: ChatRequest):
         )
         logger.info(result)
         return JSONResponse(content=result, status_code=200)
-        #return ResponseHandler.success(data=result)
 
 @app.post("/audio/speech")
 @ResponseHandler.handle_errors
