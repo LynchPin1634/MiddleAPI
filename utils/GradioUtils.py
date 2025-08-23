@@ -17,9 +17,6 @@ from utils.ConfigUtils import ConfigTools
 from gradio_client import Client, file
 
 
-def isdocker():
-    return os.path.exists('/.dockerenv')
-
 class GradioClient:
     @staticmethod
     def inference(language,text):
@@ -53,10 +50,7 @@ class GradioClient:
         speed = cm.get_value("gpt")["speed"]
         if_freeze = cm.get_value("gpt")["if_freeze"]
 
-        if isdocker():
-            client = Client("http://host.docker.internal:9872/")
-        else:
-            client = Client("http://localhost:9872/")
+        client = Client("http://localhost:9872/")
 
         if cm.get_value("global")["use_new_api"]:
             result = client.predict(reference_audio, reference_audio_text, reference_audio_language, inference_text,

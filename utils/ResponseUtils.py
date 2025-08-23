@@ -43,13 +43,12 @@ class ResponseHandler:
             value:Any = None,
             data: Any = None,
             message: str = "操作成功",
-            code: int = 200,
             **extra: Any
     ) -> JSONResponse:
         """成功响应"""
         response_data = {
             "status": "success",
-            "code": code,
+            "code": 200,
             "message": message,
             "data": data,
             "section": section,
@@ -58,12 +57,11 @@ class ResponseHandler:
 
         }
         response_data.update(extra)
-        return JSONResponse(content=response_data, status_code=code)
+        return JSONResponse(content=response_data, status_code=200)
 
     @staticmethod
     def error(
             message: str = "操作失败",
-            code: int = 500,
             error_type: Optional[str] = None,
             details: Optional[Any] = None,
             **extra: Any
@@ -71,13 +69,13 @@ class ResponseHandler:
         """错误响应"""
         error_data = {
             "status": "error",
-            "code": code,
+            "code": 500,
             "message": message,
             "type": error_type,
             "details": details
         }
         error_data.update(extra)
-        return HTTPException(status_code=code, detail=error_data)
+        return HTTPException(status_code=500, detail=error_data)
 
     @staticmethod
     def handle_file_response(file_path: Path):
@@ -85,7 +83,6 @@ class ResponseHandler:
         if not file_path.exists():
             raise ResponseHandler.error(
                 message="文件不存在",
-                code=404,
                 error_type=ErrorTypes.FILE_NOT_FOUND
             )
         return FileResponse(file_path)
@@ -96,7 +93,6 @@ class ResponseHandler:
         if not api_key:
             raise ResponseHandler.error(
                 message="无效的API密钥",
-                code=500,
                 error_type=ErrorTypes.INVALID_API_KEY
             )
 
@@ -114,7 +110,6 @@ class ResponseHandler:
                 logging.error(f"处理请求时出错: {str(exc)}", exc_info=True)
                 raise ResponseHandler.error(
                     message="内部服务器错误",
-                    code=500,
                     error_type=ErrorTypes.INTERNAL_ERROR,
                     details=str(exc)
                 )

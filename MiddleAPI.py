@@ -258,52 +258,21 @@ async def set_config(config_items: Union[SetConfigObj, List[SetConfigObj]]):
 async def reset_config(confirm: ResetConfigObj):
     """重置参数并写入配置的方法"""
     if not confirm.confirm:
-        raise ResponseHandler.error(
+        return ResponseHandler.error(
             message="需要确认才能重置",
             error_type=ErrorTypes.VALIDATION_ERROR
         )
 
-    cm = ConfigTools("config/config.yaml")
-    default_config = {
-        "cutting": {
-            "cutting_mode": "Slice once every 4 sentences"
-        },
-        "global": {
-            "use_new_api": False
-        },
-        "gpt": {
-            "temperature": 0.65,
-            "top_k": 15,
-            "top_p": 0,
-            "speed": 1,
-            "if_freeze": False
-        },
-        "reference": {
-            "no_reference_mode": False,
-            "reference_audio_local": "",
-            "reference_audio_url": "https://fs-im-kefu.7moor-fs1.com/ly/4d2c3f00-7d4c-11e5-af15-41bf63ae4ea0/1739002890857/audio.wav",
-            "reference_audio_language": "Chinese",
-            "reference_audio_text": "阿米娅看上去还是这么瘦弱，这个年纪的孩子，个子是不是应该更高一点才对？她到底有没有好好吃饭呢。",
-            "inp_refs": None
-        },
-        "inference": {
-            "inference_text_language": "中英混合"
-        },
-        "minecraft_api_key": {
-            "minecraft_api_key": "sk-12345678abcdefgh12345678abcdefgh12345678abcdefgh",
-            "minecraft_proxy_url": ""
-        },
-        "mode": {
-            "mode": "tts"
-        }
-    }
 
-
-    if cm.write_config(default_config) != 0:
-        raise ResponseHandler.error(
-            message="重置配置失败",
-            error_type=ErrorTypes.CONFIG_WRITE_ERROR
+    if os.path.exists("config/config.yaml"):
+        os.remove("config/config.yaml")
+    else:
+        return ResponseHandler.error(
+            message="找不到原始文件",
+            error_type=ErrorTypes.FILE_NOT_FOUND
         )
+
+    shutil.copy("config/config.example", "config/config.yaml")
 
     return ResponseHandler.success()
 
@@ -323,7 +292,6 @@ async def get_config(gc: GetConfigObj = Depends()):
     if gc.section == "all":
         return ResponseHandler.success(
             message="OK",
-            code=200,
             value=config
         )
 
@@ -331,28 +299,24 @@ async def get_config(gc: GetConfigObj = Depends()):
         if gc.section in config:
             return ResponseHandler.success(
                 message="OK",
-                code=200,
                 value=config[gc.section]
             )
 
         else:
             return ResponseHandler.error(
                 message="FAILED",
-                code=500,
                 details="Section not found"
             )
 
     if gc.section in config and gc.key in config[gc.section]:
         return ResponseHandler.success(
             message="OK",
-            code=200,
             section = gc.section,
             key=gc.key,
             value=config[gc.section][gc.key]
         )
     return ResponseHandler.error(
         message="FAILED",
-        code=500,
         details="Key not found"
     )
 
@@ -363,6 +327,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         log_level="info",
-        reload=True, #开发请设置为True
-        workers=4
+        reload=True #开发请设置为True
     )

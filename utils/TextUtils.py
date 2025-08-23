@@ -42,17 +42,26 @@ class CleanText:
 class OldAPI:
     @staticmethod
     def old_api(use_new_api,input_text):
-        """这里是v2 v3对调方法，默认v2。"""
+        """这里是v2 v2pro对调方法，默认v2pro。"""
         mapping = {
-            "中文": "Chinese",
-            "英文": "English",
-            "日文": "Japanese",
-            "不切": "No slice",
-            "凑四句一切": "Slice once every 4 sentences",
-            "凑50字一切": "Cut per 50 characters",
-            "按中文句号。切": "Slice by Chinese punct",
-            "按英文句号.切": "Slice by English punct",
-            "按标点符号切": "Slice by every punct",
+            "Chinese": "中文",
+            "Cantonese": "粤语",
+            "English": "英文",
+            "Japanese": "日文",
+            "Korean": "韩语",
+            "zh-en": "中英混合",
+            "yue-en": "粤英混合",
+            "ja-en": "日英混合",
+            "ko-en": "韩英混合",
+            "multi": "多语种混合",
+            "yue-multi": "多语种混合(粤语)",
+            "No slice": "cut0",
+            "Slice once every 4 sentences": "cut1",
+            "Cut per 50 characters": "cut2",
+            "Slice by Chinese punct": "cut3",
+            "Slice by English punct": "cut4",
+            "Slice by every punct": "cut5",
         }
         reverse_mapping = {v: k for k, v in mapping.items()}
         return mapping.get(input_text, input_text) if use_new_api else reverse_mapping.get(input_text, input_text)
+

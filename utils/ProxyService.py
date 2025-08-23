@@ -62,7 +62,6 @@ async def handle_proxy_request(
                 logger.error(f"API错误: {api_response.status} - {error_text}")
                 raise ResponseHandler.error(
                     message="AI服务不可用",
-                    code=500,
                     error_type=ErrorTypes.INTERNAL_ERROR,
                     details=error_text
                 )
@@ -87,7 +86,6 @@ async def handle_proxy_request(
         logger.error(f"网络错误: {str(e)}")
         raise ResponseHandler.error(
             message="网络服务不可用",
-            code=500,
             error_type=ErrorTypes.INTERNAL_ERROR,
             details=str(e)
         )
@@ -110,9 +108,26 @@ def _sanitize_request(data: Dict[str, Any], config: Dict[str, Any]) -> Dict[str,
     data.pop("stop", None)
     return data
 
+
+
+
+
+
+
+
+
+
+
+
 def _clean_response_text(text: str) -> str:
     """清理响应文本"""
     return re.sub(r'!\w+\([^)]*\)', '', text)
+
+
+
+
+
+
 
 def _calculate_tts_timeout(text: str, config: Dict[str, Any]) -> int:
     """计算动态TTS超时时间"""
